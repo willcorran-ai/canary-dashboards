@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canary — Dashboard · 05 Apr 2026</title>
+<style>
+:root {
+  --canary: #c8a84e; --canary-dim: #8a7a3a; --canary-bg: #2a2520; --canary-border: #3d3529;
+  --bg0: #0e0e0e; --bg1: #141414; --bg2: #1a1a1a; --bg3: #1e1e1e; --bg4: #222222;
+  --border: #2a2a2a; --border-light: #333333;
+  --text0: #e8e2d6; --text1: #d4cfc4; --text2: #b0a898; --text3: #8a8578; --text4: #5a564e; --text5: #3a3530;
+  --green: #6b9e78; --green-dim: #3a5a42; --green-bg: #1a2520;
+  --red: #9e6b6b; --red-dim: #5a3a3a; --red-bg: #251a1a;
+  --blue: #6a8fa8; --blue-dim: #3a5568; --blue-bg: #1a2530;
+  --amber: #b09a5a; --amber-dim: #6a5a30;
+  --font-sans: 'Inter','Helvetica Neue',Helvetica,Arial,sans-serif; --font-mono: 'SF Mono','Roboto Mono','Fira Code',monospace; --font-data: 'SF Mono','Roboto Mono','Fira Code',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg0);color:var(--text1);font-family:var(--font-sans);font-size:13px;height:100vh;overflow:hidden;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
+#hdr{height:48px;background:var(--bg1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;flex-shrink:0;position:relative;}
+#hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--canary-dim),transparent);opacity:0.3;}
+.hdr-brand{display:flex;align-items:center;gap:10px;margin-right:24px;}
+.hdr-wordmark{font-size:16px;font-weight:700;color:var(--text0);letter-spacing:3px;text-transform:uppercase;}
+.hdr-meta{display:flex;gap:16px;align-items:center;flex:1;}
+.hdr-tag{font-family:var(--font-mono);font-size:11px;color:var(--text4);letter-spacing:0.5px;}
+.hdr-tag b{color:var(--text3);}
+.hdr-right{display:flex;align-items:center;gap:12px;margin-left:auto;}
+.hdr-clock{font-family:var(--font-data);font-size:13px;color:var(--canary);letter-spacing:1px;font-weight:600;min-width:65px;text-align:right;}
+.signal-badge{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--canary);background:var(--canary-bg);border:1px solid var(--canary-border);padding:3px 10px;}
+#body{display:flex;flex:1;overflow:hidden;}
+#nav{width:200px;background:var(--bg1);border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;padding-top:12px;overflow-y:auto;}
+.nav-section-label{font-family:var(--font-mono);font-size:9px;color:var(--text5);letter-spacing:3px;text-transform:uppercase;padding:14px 16px 6px 16px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-left:2px solid transparent;transition:all .15s;}
+.nav-item:hover{background:var(--bg2);border-left-color:var(--border-light);}
+.nav-item.active{background:var(--bg3);border-left-color:var(--canary);}
+.nav-label{font-size:12px;color:var(--text3);letter-spacing:0.5px;}
+.nav-item.active .nav-label{color:var(--text0);}
+.nav-badge{margin-left:auto;font-family:var(--font-mono);font-size:10px;background:var(--bg4);border:1px solid var(--border);padding:1px 6px;color:var(--text4);}
+.nav-badge.gold{border-color:var(--canary-border);color:var(--canary);}
+.nav-divider{height:1px;background:var(--border);margin:8px 0;}
+.nav-stats{padding:14px 16px;margin-top:auto;border-top:1px solid var(--border);}
+.nav-stat-row{display:flex;justify-content:space-between;padding:3px 0;}
+.nav-stat-key{font-family:var(--font-mono);font-size:10px;color:var(--text5);}
+.nav-stat-val{font-family:var(--font-data);font-size:10px;color:var(--canary-dim);font-weight:600;}
+#main{flex:1;overflow-y:auto;background:var(--bg0);}
+.section{display:none;padding:20px 24px;}
+.section.active{display:block;}
+.sec-hdr{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.sec-title{font-family:var(--font-mono);font-size:11px;color:var(--canary);letter-spacing:3px;text-transform:uppercase;font-weight:600;}
+.sec-hdr-line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.sec-meta{font-family:var(--font-mono);font-size:10px;color:var(--text4);}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);padding:16px 18px;transition:border-color .2s;}
+.stat-card:hover{border-color:var(--border-light);}
+.stat-val{font-family:var(--font-data);font-size:28px;font-weight:700;color:var(--canary);line-height:1;}
+.stat-lbl{font-family:var(--font-mono);font-size:9px;color:var(--text4);letter-spacing:2px;text-transform:uppercase;margin-top:6px;}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+.signal-card{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--border-light);margin-bottom:12px;overflow:hidden;transition:border-color .2s;}
+.signal-card:hover{border-color:var(--border-light);}
+.signal-card.bullish{border-left-color:var(--green);}
+.signal-card.bearish{border-left-color:var(--red);}
+.signal-card.ambiguous{border-left-color:var(--amber);}
+.signal-card.hero{border-left-color:var(--canary);background:var(--canary-bg);border-color:var(--canary-border);}
+.signal-hdr{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none;}
+.signal-hdr:hover{background:var(--bg3);}
+.signal-title{flex:1;font-size:14px;font-weight:600;color:var(--text0);line-height:1.4;}
+.signal-body{display:none;padding:0 18px 16px 18px;border-top:1px solid var(--border);}
+.signal-card.open .signal-body{display:block;padding-top:14px;}
+.signal-expand{color:var(--text4);font-size:11px;transition:.2s;}
+.signal-card.open .signal-expand{transform:rotate(90deg);}
+.analysis-text{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;}
+.badge{font-family:var(--font-mono);font-size:9px;padding:2px 8px;border:1px solid;letter-spacing:1px;text-transform:uppercase;display:inline-block;white-space:nowrap;}
+.badge.green{color:var(--green);border-color:var(--green-dim);background:var(--green-bg);}
+.badge.red{color:var(--red);border-color:var(--red-dim);background:var(--red-bg);}
+.badge.blue{color:var(--blue);border-color:var(--blue-dim);background:var(--blue-bg);}
+.badge.gold{color:var(--canary);border-color:var(--canary-border);background:var(--canary-bg);}
+.badge.dim{color:var(--text4);border-color:var(--border);background:var(--bg3);}
+.sector-tag{font-family:var(--font-mono);font-size:10px;color:var(--text3);background:var(--bg4);border:1px solid var(--border-light);padding:3px 8px;letter-spacing:1px;text-transform:uppercase;}
+.dir-up{color:var(--green);font-size:14px;font-weight:700;}
+.dir-dn{color:var(--red);font-size:14px;font-weight:700;}
+.dir-amb{color:var(--amber);font-size:12px;}
+.score-dots{display:inline-flex;gap:3px;vertical-align:middle;}
+.score-dots .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.score-dots .dot.on{background:var(--canary);}
+.score-dots .dot.off{background:var(--bg4);border:1px solid var(--border);}
+.conf-meter{display:flex;align-items:center;gap:8px;}
+.conf-bar-track{width:100px;height:5px;background:var(--bg4);position:relative;overflow:hidden;}
+.conf-bar-fill{height:100%;background:var(--canary);transition:width .3s;}
+.conf-val{font-family:var(--font-data);font-size:12px;font-weight:700;color:var(--canary);}
+.sparkline{display:inline-flex;align-items:flex-end;gap:2px;height:32px;}
+.spark-bar{width:5px;background:var(--canary-border);transition:height .3s,background .3s;cursor:pointer;position:relative;}
+.spark-bar.active{background:var(--canary);}
+.spark-bar:hover{background:var(--canary);}
+.spark-tooltip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:9px;color:var(--text0);background:var(--bg4);border:1px solid var(--border-light);padding:2px 6px;white-space:nowrap;z-index:10;}
+.spark-bar:hover .spark-tooltip{display:block;}
+.spectrum-wrap{background:var(--bg2);border:1px solid var(--border);padding:16px 18px;margin-bottom:18px;}
+.spectrum-track{position:relative;height:40px;background:linear-gradient(90deg,var(--red-bg),var(--bg3) 50%,var(--green-bg));border:1px solid var(--border);margin:8px 0;}
+.spectrum-center{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border-light);}
+.spectrum-dot{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--canary);top:50%;transform:translate(-50%,-50%);cursor:pointer;border:2px solid var(--canary-border);transition:all .2s;z-index:2;}
+.spectrum-dot:hover{width:16px;height:16px;border-color:var(--canary);box-shadow:0 0 8px rgba(200,168,78,0.4);}
+.spectrum-labels{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9px;color:var(--text4);letter-spacing:2px;text-transform:uppercase;}
+.heatmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:4px;margin-bottom:18px;}
+.heat-cell{padding:12px 10px;text-align:center;border:1px solid var(--border);cursor:pointer;transition:all .2s;}
+.heat-cell:hover{border-color:var(--canary-border);}
+.heat-cell .heat-label{font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.heat-cell .heat-count{font-family:var(--font-data);font-size:18px;font-weight:700;}
+.heat-cell.hot{background:var(--canary-bg);}
+.heat-cell.hot .heat-count{color:var(--canary);}
+.heat-cell.warm{background:#1e1e1a;}
+.heat-cell.warm .heat-count{color:var(--amber);}
+.heat-cell.cold{background:var(--bg2);}
+.heat-cell.cold .heat-count{color:var(--text4);}
+.timeline{margin-bottom:18px;}
+.timeline-item{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);}
+.timeline-item:last-child{border-bottom:none;}
+.timeline-time{font-family:var(--font-mono);font-size:11px;color:var(--text4);min-width:60px;flex-shrink:0;}
+.timeline-dot{width:8px;height:8px;border-radius:50%;background:var(--canary);margin-top:4px;flex-shrink:0;}
+.timeline-content{flex:1;}
+.timeline-title{font-size:13px;color:var(--text0);font-weight:500;}
+.timeline-desc{font-size:11px;color:var(--text3);margin-top:2px;}
+.data-table{width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--border);margin-bottom:18px;}
+.data-table th{font-family:var(--font-mono);font-size:9px;color:var(--text4);letter-spacing:2px;text-transform:uppercase;text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg3);font-weight:500;}
+.data-table td{padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:middle;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--bg3);}
+.ticker-cell{font-family:var(--font-data);font-size:13px;font-weight:700;color:var(--canary);letter-spacing:0.5px;}
+.filter-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.filter-btn{font-family:var(--font-mono);font-size:10px;padding:5px 12px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:.15s;}
+.filter-btn:hover{border-color:var(--border-light);color:var(--text1);}
+.filter-btn.active-f{border-color:var(--canary-border);color:var(--canary);background:var(--canary-bg);}
+.search-bar{display:flex;gap:8px;margin-bottom:16px;}
+.search-input{flex:1;font-family:var(--font-mono);font-size:12px;padding:8px 14px;border:1px solid var(--border);background:var(--bg3);color:var(--text1);outline:none;transition:border-color .2s;}
+.search-input:focus{border-color:var(--canary-border);}
+.search-input::placeholder{color:var(--text5);}
+#main::-webkit-scrollbar,#nav::-webkit-scrollbar{width:4px;}
+#main::-webkit-scrollbar-track,#nav::-webkit-scrollbar-track{background:var(--bg0);}
+#main::-webkit-scrollbar-thumb,#nav::-webkit-scrollbar-thumb{background:var(--border);}
+@media(max-width:768px){#nav{display:none;}.grid-4{grid-template-columns:repeat(2,1fr);}.grid-3{grid-template-columns:1fr;}.heatmap{grid-template-columns:repeat(3,1fr);}}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div class="hdr-brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 3L16 8L20 7L18 12L20 17L14 15L12 21L10 15L4 17L6 12L4 7L8 8L12 3Z" fill="#c8a84e" opacity="0.9"/>
+      <circle cx="13" cy="9" r="1.5" fill="#141414"/>
+    </svg>
+    <span class="hdr-wordmark">CANARY</span>
+  </div>
+  <div class="hdr-meta">
+    <div class="hdr-tag"><b>05 APR 2026</b></div>
+    <div class="hdr-tag">06:12 GMT</div>
+  </div>
+  <div class="hdr-right">
+    <div class="signal-badge">43 signals today</div>
+    <div class="hdr-clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<div id="body">
+  <div id="nav">
+    <div class="nav-section-label">Navigate</div>
+    <div class="nav-item active" onclick="show('overview',this)">
+      <div class="nav-label">Overview</div>
+      <div class="nav-badge gold">43</div>
+    </div>
+    <div class="nav-item" onclick="show('signals',this)">
+      <div class="nav-label">Signals</div>
+      <div class="nav-badge">43</div>
+    </div>
+    <div class="nav-item" onclick="show('sectors',this)">
+      <div class="nav-label">Sector Map</div>
+    </div>
+    <div class="nav-item" onclick="show('timeline',this)">
+      <div class="nav-label">Timeline</div>
+    </div>
+    <div class="nav-item" onclick="show('performance',this)">
+      <div class="nav-label">Performance</div>
+    </div>
+    <div class="nav-item" onclick="show('analysis',this)"><div class="nav-label">Analysis</div></div>
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Sectors</div>
+    
+    <div class="nav-item" onclick="filterSector('other')">
+      <div class="nav-label">Other</div>
+      <div class="nav-badge">43</div>
+    </div>
+    <div class="nav-stats">
+      <div class="nav-stat-row"><div class="nav-stat-key">SOURCES</div><div class="nav-stat-val">20/29</div></div>
+      <div class="nav-stat-row"><div class="nav-stat-key">INGESTED</div><div class="nav-stat-val">2024</div></div>
+      <div class="nav-stat-row"><div class="nav-stat-key">FILTERED</div><div class="nav-stat-val">43</div></div>
+      </div>
+  </div>
+
+  <div id="main">
+
+    <!-- OVERVIEW -->
+    <div class="section active" id="overview">
+      <div class="sec-hdr">
+        <div class="sec-title">Daily Digest</div>
+        <div class="sec-hdr-line"></div>
+        <div class="sec-meta">05 Apr 2026 &middot; 43 signals</div>
+      </div>
+
+      <div class="grid-4">
+        <div class="stat-card">
+          <div class="stat-val">2024</div>
+          <div class="stat-lbl">Ingested</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">43</div>
+          <div class="stat-lbl">Signals</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--green);">0</div>
+          <div class="stat-lbl">Bullish</div>
+          <div class="stat-sub">0 bearish, 43 ambiguous</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">1</div>
+          <div class="stat-lbl">Sectors</div>
+        </div>
+      </div>
+
+      
+
+      
+      <div class="spectrum-wrap">
+        <p style="font-family:var(--font-mono);font-size:9px;color:var(--text4);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">
+          Conviction Spectrum — Today's Signals</p>
+        <div class="spectrum-track">
+          <div class="spectrum-center"></div>
+          <div class="spectrum-dot" style="left:50%;" title="WMT &harr; Walmart to close Massachusetts fulfillme"></div><div class="spectrum-dot" style="left:50%;" title="UBER &harr; Why Rave Restaurant Group cut ties with "></div><div class="spectrum-dot" style="left:50%;" title="WMT &harr; when do needohs restock at walmart"></div><div class="spectrum-dot" style="left:50%;" title="SOFI &harr; Overrated or underrated? #hairloss #hair"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; European ministers call for a tax on ene"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Buffett may end donations to Gates chari"></div><div class="spectrum-dot" style="left:50%;" title="SQ &harr; I tried NextDNS on Android, and it’s now"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Warning Iran war 'shock' could push up m"></div><div class="spectrum-dot" style="left:50%;" title="LUV &harr; Trump warns Iran '48 hours before all He"></div><div class="spectrum-dot" style="left:50%;" title="HIMS &harr; Lectric April Showers e-bike sale offers"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Built a free browser game for onboarding"></div><div class="spectrum-dot" style="left:50%;" title="AAPL, NVDA &harr; Apple approves driver that lets Nvidia e"></div><div class="spectrum-dot" style="left:50%;" title="AMZN &harr; how to unsubscribe from amazon music"></div><div class="spectrum-dot" style="left:50%;" title="ORCL &harr; Oracle: OCI And Multicloud Execution Shi"></div><div class="spectrum-dot" style="left:50%;" title="SQ &harr; Block, Inc."></div><div class="spectrum-dot" style="left:50%;" title="SOFI &harr; SOFI TECHNOLOGIES, INC."></div><div class="spectrum-dot" style="left:50%;" title="HIMS &harr; &lt;Generic vague question about obscure De"></div><div class="spectrum-dot" style="left:50%;" title="NVO, RDDT &harr; $NVO Reddit Breakout"></div><div class="spectrum-dot" style="left:50%;" title="NKE &harr; NKE"></div><div class="spectrum-dot" style="left:50%;" title="HD &harr; HD"></div><div class="spectrum-dot" style="left:50%;" title="V &harr; V"></div><div class="spectrum-dot" style="left:50%;" title="PEP &harr; PEP"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Lost everything"></div><div class="spectrum-dot" style="left:50%;" title="HIMS &harr; Is This Weight Loss Drug Stock a Buy on "></div><div class="spectrum-dot" style="left:50%;" title="BIIB &harr; Why Biogen Stock Sank While the Market S"></div><div class="spectrum-dot" style="left:50%;" title="ATYM &harr;  (ATYM)"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Home solar + battery + EV, one GMC Sierr"></div><div class="spectrum-dot" style="left:50%;" title="PFE &harr; PFE"></div><div class="spectrum-dot" style="left:50%;" title="MSFT &harr; How many products does Microsoft have na"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Pivotal Studies of Pharmacotherapies App"></div><div class="spectrum-dot" style="left:50%;" title="HIMS &harr; Hers"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Non-Farm Payrolls For March Large Beat O"></div><div class="spectrum-dot" style="left:50%;" title="LLY &harr; new weight loss drug by eli lilly"></div><div class="spectrum-dot" style="left:50%;" title="EFX &harr; EQUIFAX, INC."></div><div class="spectrum-dot" style="left:50%;" title="ADBE &harr; ADOBE INC (ADBE)"></div><div class="spectrum-dot" style="left:50%;" title="QQQ &harr; QQQ"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; SYNCHRONY FINANCIAL"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Association between screening duration a"></div><div class="spectrum-dot" style="left:50%;" title="SYRE &harr; Spyre Therapeutics, Inc. (SYRE)"></div><div class="spectrum-dot" style="left:50%;" title="TSLA &harr; TSLA"></div><div class="spectrum-dot" style="left:50%;" title="INTC &harr; Intel"></div><div class="spectrum-dot" style="left:50%;" title="CVNA &harr; CVNA"></div><div class="spectrum-dot" style="left:50%;" title="LCID &harr; LCID"></div>
+        </div>
+        <div class="spectrum-labels">
+          <span>Bearish</span>
+          <span>Neutral</span>
+          <span>Bullish</span>
+        </div>
+      </div>
+      
+      <div class="signal-card ambiguous hero open" data-sector="" data-dir="ambiguous" data-score="0.95">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          <span class="badge gold">Signal of the Day</span>
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Walmart to close Massachusetts fulfillment center</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">WMT</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">niche_forums</span>
+          </div>
+          
+        <div style="margin-bottom:14px;">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text4);letter-spacing:1px;">7-DAY TREND</span>
+          
+          <span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span>
+        </div>
+        <div class="conf-meter" style="margin-bottom:14px;">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text4);">CONFIDENCE</span>
+          <div class="conf-bar-track"><div class="conf-bar-fill" style="width:95%;"></div></div>
+          <span class="conf-val">0.95</span>
+        </div>
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.95">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Why Rave Restaurant Group cut ties with Uber Eats</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">UBER</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">niche_forums</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.95">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">when do needohs restock at walmart</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">WMT</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Trends</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.93">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Overrated or underrated? #hairloss #hairgrowth</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">SOFI</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · YouTube</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.92">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">European ministers call for a tax on energy company windfall profits as Iran war drives price surge</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · News</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.86">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Buffett may end donations to Gates charity over Bill's ties to Epstein</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · News</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.85">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">I tried NextDNS on Android, and it’s now my favorite way to block ads on my phone</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">SQ</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">niche_forums</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.85">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Warning Iran war 'shock' could push up mortgages for 1.3m homeowners</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · News</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.85">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Trump warns Iran '48 hours before all Hell will reign down,' while search for missing crew member in</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">LUV</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · News</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.83">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Lectric April Showers e-bike sale offers up to $720 savings, EcoFlow + Anker SOLIX flash sales with </div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">HIMS</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">niche_forums</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.78">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Built a free browser game for onboarding junior SREs on Kubernetes incident respons</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Reddit</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.77">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Apple approves driver that lets Nvidia eGPUs work with Arm Macs</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">AAPL</span> <span style="color:var(--text4);">&middot;</span> <span class="ticker-cell">NVDA</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">hacker_news</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.77">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">how to unsubscribe from amazon music</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">AMZN</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Trends</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.76">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Oracle: OCI And Multicloud Execution Shift The Narrative To Buy (Rating Upgrade)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">ORCL</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">financial_sentiment</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.76">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Block, Inc.</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">SQ</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">cfpb_complaints</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.75">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">SOFI TECHNOLOGIES, INC.</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">SOFI</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">cfpb_complaints</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.74">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">&lt;Generic vague question about obscure DevOps related pain point and asking how others are handlin</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">HIMS</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Reddit</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.71">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">$NVO Reddit Breakout</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">NVO</span> <span style="color:var(--text4);">&middot;</span> <span class="ticker-cell">RDDT</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Reddit</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.71">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">NKE</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">NKE</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · Earnings</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.70">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">HD</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">HD</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · Congress</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.70">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">V</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">V</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · Congress</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.70">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">PEP</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">PEP</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · Congress</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.69">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Lost everything</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Reddit</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.68">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Is This Weight Loss Drug Stock a Buy on the Dip?</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">HIMS</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">financial_sentiment</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.67">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Why Biogen Stock Sank While the Market Soared on Thursday</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">BIIB</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">financial_sentiment</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.67">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title"> (ATYM)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">ATYM</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · UK PDMR</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.66">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Home solar + battery + EV, one GMC Sierra EV driver shares their experience</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Reddit</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.65">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">PFE</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">PFE</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · Congress</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.64">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">How many products does Microsoft have named 'Copilot'?</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">MSFT</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">hacker_news</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.64">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Pivotal Studies of Pharmacotherapies Approved by the US FDA </div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T4 · Research</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.62">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Hers</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">HIMS</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T4 · Research</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.62">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Non-Farm Payrolls For March Large Beat On Expectations; Markets Closed For Good Friday</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">financial_sentiment</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.57">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">new weight loss drug by eli lilly</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">LLY</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Trends</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.56">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">EQUIFAX, INC.</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">EFX</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">cfpb_complaints</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.46">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">ADOBE INC (ADBE)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">ADBE</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · 13F</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.45">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">QQQ</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">QQQ</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · Options</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.45">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">SYNCHRONY FINANCIAL</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · 13F</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.44">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Association between screening duration and treatment outcome</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T4 · Research</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.44">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Spyre Therapeutics, Inc. (SYRE)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">SYRE</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · Insider</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.44">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">TSLA</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">TSLA</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · Options</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.40">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Intel</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">INTC</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T4 · GitHub</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.39">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">CVNA</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">CVNA</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · Short Int</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.37">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">LCID</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">LCID</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · Short Int</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIGNALS TABLE -->
+    <div class="section" id="signals">
+      <div class="sec-hdr">
+        <div class="sec-title">All Signals</div>
+        <div class="sec-hdr-line"></div>
+        <div class="sec-meta">43 signals &middot; 05 Apr 2026</div>
+      </div>
+      <div class="search-bar">
+        <input type="text" class="search-input" placeholder="Search by ticker, keyword, or sector..." id="signalSearch" onkeyup="searchSignals(this.value)">
+      </div>
+      <div class="filter-bar">
+        <div class="filter-btn active-f" onclick="filterDir('all',this)">All</div>
+        <div class="filter-btn" onclick="filterDir('bullish',this)">Bullish</div>
+        <div class="filter-btn" onclick="filterDir('bearish',this)">Bearish</div>
+        <div class="filter-btn" onclick="filterDir('ambiguous',this)">Ambiguous</div>
+      </div>
+      
+      <table class="data-table">
+        <thead><tr>
+          <th style="width:30px;">#</th>
+          <th>Signal</th>
+          <th>Ticker</th>
+          <th>Sector</th>
+          <th style="text-align:center;">Dir</th>
+          <th style="text-align:center;">Score</th>
+          <th>Source</th>
+          <th>Momentum</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--text4);">01</td>
+            <td style="color:var(--text0);font-weight:500;">Walmart to close Massachusetts fulfillment center</td>
+            <td class="ticker-cell">WMT</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.95</span></td>
+            <td style="color:var(--text3);">niche_forums</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">02</td>
+            <td style="color:var(--text0);font-weight:500;">Why Rave Restaurant Group cut ties with Uber Eats</td>
+            <td class="ticker-cell">UBER</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.95</span></td>
+            <td style="color:var(--text3);">niche_forums</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">03</td>
+            <td style="color:var(--text0);font-weight:500;">when do needohs restock at walmart</td>
+            <td class="ticker-cell">WMT</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.95</span></td>
+            <td style="color:var(--text3);">T3 · Trends</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">04</td>
+            <td style="color:var(--text0);font-weight:500;">Overrated or underrated? #hairloss #hairgrowth</td>
+            <td class="ticker-cell">SOFI</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.93</span></td>
+            <td style="color:var(--text3);">T3 · YouTube</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">05</td>
+            <td style="color:var(--text0);font-weight:500;">European ministers call for a tax on energy company windfall</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.92</span></td>
+            <td style="color:var(--text3);">T2 · News</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">06</td>
+            <td style="color:var(--text0);font-weight:500;">Buffett may end donations to Gates charity over Bill's ties </td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.86</span></td>
+            <td style="color:var(--text3);">T2 · News</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">07</td>
+            <td style="color:var(--text0);font-weight:500;">I tried NextDNS on Android, and it’s now my favorite way to </td>
+            <td class="ticker-cell">SQ</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.85</span></td>
+            <td style="color:var(--text3);">niche_forums</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">08</td>
+            <td style="color:var(--text0);font-weight:500;">Warning Iran war 'shock' could push up mortgages for 1.3m ho</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.85</span></td>
+            <td style="color:var(--text3);">T2 · News</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">09</td>
+            <td style="color:var(--text0);font-weight:500;">Trump warns Iran '48 hours before all Hell will reign down,'</td>
+            <td class="ticker-cell">LUV</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.85</span></td>
+            <td style="color:var(--text3);">T2 · News</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">10</td>
+            <td style="color:var(--text0);font-weight:500;">Lectric April Showers e-bike sale offers up to $720 savings,</td>
+            <td class="ticker-cell">HIMS</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.83</span></td>
+            <td style="color:var(--text3);">niche_forums</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">11</td>
+            <td style="color:var(--text0);font-weight:500;">Built a free browser game for onboarding junior SREs on Kube</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.78</span></td>
+            <td style="color:var(--text3);">T3 · Reddit</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">12</td>
+            <td style="color:var(--text0);font-weight:500;">Apple approves driver that lets Nvidia eGPUs work with Arm M</td>
+            <td class="ticker-cell">AAPL, NVDA</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.77</span></td>
+            <td style="color:var(--text3);">hacker_news</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">13</td>
+            <td style="color:var(--text0);font-weight:500;">how to unsubscribe from amazon music</td>
+            <td class="ticker-cell">AMZN</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.77</span></td>
+            <td style="color:var(--text3);">T3 · Trends</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">14</td>
+            <td style="color:var(--text0);font-weight:500;">Oracle: OCI And Multicloud Execution Shift The Narrative To </td>
+            <td class="ticker-cell">ORCL</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.76</span></td>
+            <td style="color:var(--text3);">financial_sentiment</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">15</td>
+            <td style="color:var(--text0);font-weight:500;">Block, Inc.</td>
+            <td class="ticker-cell">SQ</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.76</span></td>
+            <td style="color:var(--text3);">cfpb_complaints</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">16</td>
+            <td style="color:var(--text0);font-weight:500;">SOFI TECHNOLOGIES, INC.</td>
+            <td class="ticker-cell">SOFI</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.75</span></td>
+            <td style="color:var(--text3);">cfpb_complaints</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">17</td>
+            <td style="color:var(--text0);font-weight:500;">&lt;Generic vague question about obscure DevOps related pain po</td>
+            <td class="ticker-cell">HIMS</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.74</span></td>
+            <td style="color:var(--text3);">T3 · Reddit</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">18</td>
+            <td style="color:var(--text0);font-weight:500;">$NVO Reddit Breakout</td>
+            <td class="ticker-cell">NVO, RDDT</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.71</span></td>
+            <td style="color:var(--text3);">T3 · Reddit</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">19</td>
+            <td style="color:var(--text0);font-weight:500;">NKE</td>
+            <td class="ticker-cell">NKE</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.71</span></td>
+            <td style="color:var(--text3);">T2 · Earnings</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">20</td>
+            <td style="color:var(--text0);font-weight:500;">HD</td>
+            <td class="ticker-cell">HD</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.70</span></td>
+            <td style="color:var(--text3);">T1 · Congress</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">21</td>
+            <td style="color:var(--text0);font-weight:500;">V</td>
+            <td class="ticker-cell">V</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.70</span></td>
+            <td style="color:var(--text3);">T1 · Congress</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">22</td>
+            <td style="color:var(--text0);font-weight:500;">PEP</td>
+            <td class="ticker-cell">PEP</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.70</span></td>
+            <td style="color:var(--text3);">T1 · Congress</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">23</td>
+            <td style="color:var(--text0);font-weight:500;">Lost everything</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.69</span></td>
+            <td style="color:var(--text3);">T3 · Reddit</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">24</td>
+            <td style="color:var(--text0);font-weight:500;">Is This Weight Loss Drug Stock a Buy on the Dip?</td>
+            <td class="ticker-cell">HIMS</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.68</span></td>
+            <td style="color:var(--text3);">financial_sentiment</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">25</td>
+            <td style="color:var(--text0);font-weight:500;">Why Biogen Stock Sank While the Market Soared on Thursday</td>
+            <td class="ticker-cell">BIIB</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.67</span></td>
+            <td style="color:var(--text3);">financial_sentiment</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">26</td>
+            <td style="color:var(--text0);font-weight:500;"> (ATYM)</td>
+            <td class="ticker-cell">ATYM</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.67</span></td>
+            <td style="color:var(--text3);">T1 · UK PDMR</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">27</td>
+            <td style="color:var(--text0);font-weight:500;">Home solar + battery + EV, one GMC Sierra EV driver shares t</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.66</span></td>
+            <td style="color:var(--text3);">T3 · Reddit</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">28</td>
+            <td style="color:var(--text0);font-weight:500;">PFE</td>
+            <td class="ticker-cell">PFE</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.65</span></td>
+            <td style="color:var(--text3);">T1 · Congress</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">29</td>
+            <td style="color:var(--text0);font-weight:500;">How many products does Microsoft have named 'Copilot'?</td>
+            <td class="ticker-cell">MSFT</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.64</span></td>
+            <td style="color:var(--text3);">hacker_news</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">30</td>
+            <td style="color:var(--text0);font-weight:500;">Pivotal Studies of Pharmacotherapies Approved by the US FDA </td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.64</span></td>
+            <td style="color:var(--text3);">T4 · Research</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">31</td>
+            <td style="color:var(--text0);font-weight:500;">Hers</td>
+            <td class="ticker-cell">HIMS</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.62</span></td>
+            <td style="color:var(--text3);">T4 · Research</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">32</td>
+            <td style="color:var(--text0);font-weight:500;">Non-Farm Payrolls For March Large Beat On Expectations; Mark</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.62</span></td>
+            <td style="color:var(--text3);">financial_sentiment</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">33</td>
+            <td style="color:var(--text0);font-weight:500;">new weight loss drug by eli lilly</td>
+            <td class="ticker-cell">LLY</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.57</span></td>
+            <td style="color:var(--text3);">T3 · Trends</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">34</td>
+            <td style="color:var(--text0);font-weight:500;">EQUIFAX, INC.</td>
+            <td class="ticker-cell">EFX</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.56</span></td>
+            <td style="color:var(--text3);">cfpb_complaints</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">35</td>
+            <td style="color:var(--text0);font-weight:500;">ADOBE INC (ADBE)</td>
+            <td class="ticker-cell">ADBE</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.46</span></td>
+            <td style="color:var(--text3);">T1 · 13F</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">36</td>
+            <td style="color:var(--text0);font-weight:500;">QQQ</td>
+            <td class="ticker-cell">QQQ</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.45</span></td>
+            <td style="color:var(--text3);">T1 · Options</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">37</td>
+            <td style="color:var(--text0);font-weight:500;">SYNCHRONY FINANCIAL</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.45</span></td>
+            <td style="color:var(--text3);">T1 · 13F</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">38</td>
+            <td style="color:var(--text0);font-weight:500;">Association between screening duration and treatment outcome</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.44</span></td>
+            <td style="color:var(--text3);">T4 · Research</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">39</td>
+            <td style="color:var(--text0);font-weight:500;">Spyre Therapeutics, Inc. (SYRE)</td>
+            <td class="ticker-cell">SYRE</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.44</span></td>
+            <td style="color:var(--text3);">T1 · Insider</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">40</td>
+            <td style="color:var(--text0);font-weight:500;">TSLA</td>
+            <td class="ticker-cell">TSLA</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.44</span></td>
+            <td style="color:var(--text3);">T1 · Options</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">41</td>
+            <td style="color:var(--text0);font-weight:500;">Intel</td>
+            <td class="ticker-cell">INTC</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.40</span></td>
+            <td style="color:var(--text3);">T4 · GitHub</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">42</td>
+            <td style="color:var(--text0);font-weight:500;">CVNA</td>
+            <td class="ticker-cell">CVNA</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.39</span></td>
+            <td style="color:var(--text3);">T2 · Short Int</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">43</td>
+            <td style="color:var(--text0);font-weight:500;">LCID</td>
+            <td class="ticker-cell">LCID</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.37</span></td>
+            <td style="color:var(--text3);">T2 · Short Int</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr></tbody>
+      </table>
+    </div>
+
+    <!-- SECTOR MAP -->
+    <div class="section" id="sectors">
+      <div class="sec-hdr">
+        <div class="sec-title">Sector Heatmap</div>
+        <div class="sec-hdr-line"></div>
+        <div class="sec-meta">Signal density by sector</div>
+      </div>
+      <div class="heatmap">
+        <div class="heat-cell hot">
+          <div class="heat-label">Other</div>
+          <div class="heat-count">43</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Pharma</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Consumer</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Tech</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Energy</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Finance</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Retail</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Industrials</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Real Estate</div>
+          <div class="heat-count">0</div>
+        </div></div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="section" id="timeline">
+      <div class="sec-hdr">
+        <div class="sec-title">Signal Timeline</div>
+        <div class="sec-hdr-line"></div>
+        <div class="sec-meta">Detection chronology</div>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Walmart to close Massachusetts fulfillment center</div>
+            <div class="timeline-desc">niche_forums — Operations at the Worcester facility will be relocated to other locations, with employee layoffs sla</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Why Rave Restaurant Group cut ties with Uber Eats</div>
+            <div class="timeline-desc">niche_forums — Pizza Inn’s owner said the chain is focusing on dine-in traffic through value offerings instead of i</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">when do needohs restock at walmart</div>
+            <div class="timeline-desc">T3 · Trends — Search interest for 'when do needohs restock at walmart' is rising (70% increase) in US — related to</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Overrated or underrated? #hairloss #hairgrowth</div>
+            <div class="timeline-desc">T3 · YouTube — [YouTube disappointment signal] Sofia Hair Health  — </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">European ministers call for a tax on energy company windfall</div>
+            <div class="timeline-desc">T2 · News — Driven largely by higher oil prices, the annual inflation rate in the 21 countries that use the euro</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Buffett may end donations to Gates charity over Bill's ties </div>
+            <div class="timeline-desc">T2 · News — Revelations about Jeffrey Epstein's ties to Bill Gates have strained his friendship with Warren Buff</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">I tried NextDNS on Android, and it’s now my favorite way to </div>
+            <div class="timeline-desc">niche_forums — Its super simple setup will have you blocking ads in no time.</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Warning Iran war 'shock' could push up mortgages for 1.3m ho</div>
+            <div class="timeline-desc">T2 · News — Higher energy prices could lead to higher borrowing costs for homeowners, the Bank warns.</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Trump warns Iran '48 hours before all Hell will reign down,'</div>
+            <div class="timeline-desc">T2 · News — The U.S. military continued to search for a missing American airman on Saturday after an F-15E fight</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Lectric April Showers e-bike sale offers up to $720 savings,</div>
+            <div class="timeline-desc">niche_forums — We’re ending this week’s Green Deals with many sales, starting with the newly launched Lectric April</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Built a free browser game for onboarding junior SREs on Kube</div>
+            <div class="timeline-desc">T3 · Reddit — r/devops [DevOps/Cloud]: &quot;Built a free browser game for onboarding junior SREs on Kubernetes inciden</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Apple approves driver that lets Nvidia eGPUs work with Arm M</div>
+            <div class="timeline-desc">hacker_news — Hacker News: &quot;Apple approves driver that lets Nvidia eGPUs work with Arm Macs&quot; — 403 points, 176 com</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">how to unsubscribe from amazon music</div>
+            <div class="timeline-desc">T3 · Trends — Search interest for 'how to unsubscribe from amazon music' is rising (140% increase) in US — related</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Oracle: OCI And Multicloud Execution Shift The Narrative To </div>
+            <div class="timeline-desc">financial_sentiment — </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Block, Inc.</div>
+            <div class="timeline-desc">cfpb_complaints — Block, Inc. (SQ) received 599 consumer complaints in the last 14 days. Top products: Money transfer,</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">SOFI TECHNOLOGIES, INC.</div>
+            <div class="timeline-desc">cfpb_complaints — SOFI TECHNOLOGIES, INC. (SOFI) received 12 consumer complaints in the last 14 days. Top products: va</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">&lt;Generic vague question about obscure DevOps related pain po</div>
+            <div class="timeline-desc">T3 · Reddit — r/devops [DevOps/Cloud]: &quot;&lt;Generic vague question about obscure DevOps related pain point and asking</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">$NVO Reddit Breakout</div>
+            <div class="timeline-desc">T3 · Reddit — REDDIT BREAKOUT: $NVO trending across 3 posts in 1 subreddits (Ozempic). Total traction: 659 upvotes</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">NKE</div>
+            <div class="timeline-desc">T2 · Earnings — NKE reported on Mar 31. EPS $0.35 vs est $0.29 (+20.7%). Revenue $11.28B vs est $11.23B (+0.5%)</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">HD</div>
+            <div class="timeline-desc">T1 · Congress — CONGRESSIONAL CLUSTER BUY: 2 members purchased HD within the disclosure window. Members: David Taylo</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">V</div>
+            <div class="timeline-desc">T1 · Congress — CONGRESSIONAL CLUSTER BUY: 2 members purchased V within the disclosure window. Members: Ro Khanna De</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">PEP</div>
+            <div class="timeline-desc">T1 · Congress — CONGRESSIONAL CLUSTER BUY: 2 members purchased PEP within the disclosure window. Members: Julia Letl</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Lost everything</div>
+            <div class="timeline-desc">T3 · Reddit — r/wallstreetbets [WSB]: &quot;Lost everything&quot; — 3,055 upvotes, 622 comments. Keywords matched: AI. Post </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Is This Weight Loss Drug Stock a Buy on the Dip?</div>
+            <div class="timeline-desc">financial_sentiment — This company's anti-obesity candidate might succeed where others are failing.</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Why Biogen Stock Sank While the Market Soared on Thursday</div>
+            <div class="timeline-desc">financial_sentiment — It's reaching into its coffers for a $5.6 billion acquisition.</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title"> (ATYM)</div>
+            <div class="timeline-desc">T1 · UK PDMR — Open-market purchase: Cesar Sanchez (Chief Financial Officer) bought 6,719 shares in  @ 699.5p — tot</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Home solar + battery + EV, one GMC Sierra EV driver shares t</div>
+            <div class="timeline-desc">T3 · Reddit — r/electricvehicles [EV Sentiment]: &quot;Home solar + battery + EV, one GMC Sierra EV driver shares their</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">PFE</div>
+            <div class="timeline-desc">T1 · Congress — Congressional PURCHASE: Susan Collins Republican Senate ME (?-, House) purcight PFE (Pfizer Inc) — A</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">How many products does Microsoft have named 'Copilot'?</div>
+            <div class="timeline-desc">hacker_news — Hacker News: &quot;How many products does Microsoft have named 'Copilot'?&quot; — 530 points, 254 comments. Ke</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Pivotal Studies of Pharmacotherapies Approved by the US FDA </div>
+            <div class="timeline-desc">T4 · Research — [PMID 41926737] Clinical trial paper: This study aimed to examine the number of FDA-approved cancer </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Hers</div>
+            <div class="timeline-desc">T4 · Research — [PMID 41934124] Clinical trial paper: Thrombotic thrombocytopenic purpura (TTP) is a rare and potent</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Non-Farm Payrolls For March Large Beat On Expectations; Mark</div>
+            <div class="timeline-desc">financial_sentiment — </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">new weight loss drug by eli lilly</div>
+            <div class="timeline-desc">T3 · Trends — Search interest for 'new weight loss drug by eli lilly' is rising (32450% increase) in US — related </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">EQUIFAX, INC.</div>
+            <div class="timeline-desc">cfpb_complaints — EQUIFAX, INC. (EFX) received 37086 consumer complaints in the last 14 days. Top products: Credit rep</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">ADOBE INC (ADBE)</div>
+            <div class="timeline-desc">T1 · 13F — 13F INSTITUTIONAL: 1 tracked fund(s) show NEW position in ADOBE INC (ADBE). Funds: Bridgewater Assoc</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">QQQ</div>
+            <div class="timeline-desc">T1 · Options — 📉 PUT — strike $573.00 (spot $584.98, 2.0% OTM), expires 2026-04-06 (0dte), volume 18,098 vs OI 706 </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">SYNCHRONY FINANCIAL</div>
+            <div class="timeline-desc">T1 · 13F — 13F INSTITUTIONAL: 1 tracked fund(s) show NEW position in SYNCHRONY FINANCIAL. Funds: Bridgewater As</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Association between screening duration and treatment outcome</div>
+            <div class="timeline-desc">T4 · Research — [PMID 41927600] Clinical trial paper: The clinical implications of screening duration prior to treat</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Spyre Therapeutics, Inc. (SYRE)</div>
+            <div class="timeline-desc">T1 · Insider — DIRECTIONALLY AMBIGUOUS: 3 insiders made open-market sales of Spyre Therapeutics, Inc. stock simulta</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">TSLA</div>
+            <div class="timeline-desc">T1 · Options — 📈 CALL — strike $372.50 (spot $360.59, 3.3% OTM), expires 2026-04-06 (0dte), volume 14,430 vs OI 688</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Intel</div>
+            <div class="timeline-desc">T4 · GitHub — New release(s): llvm DPC++ daily 2026-04-05</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">CVNA</div>
+            <div class="timeline-desc">T2 · Short Int — SHORT INTEREST: SQUEEZE CANDIDATE on CVNA. SI decreased 13.5% period-over-period (15,165,730 → 13,11</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">LCID</div>
+            <div class="timeline-desc">T2 · Short Int — SHORT INTEREST: EXTREME SHORT on LCID. SI decreased 1.2% period-over-period (44,075,704 → 43,554,323</div>
+          </div>
+        </div></div>
+    </div>
+
+    <!-- PERFORMANCE -->
+    <div class="section" id="performance">
+      <div class="sec-hdr">
+        <div class="sec-title">Performance History</div>
+        <div class="sec-hdr-line"></div>
+        <div class="sec-meta">Signal accuracy tracking</div>
+      </div>
+      <p style="color:var(--text3);font-size:13px;">No scorecard data available yet. Performance tracking begins after the first prediction window closes.</p>
+    </div>
+
+    <div class="section" id="analysis"><div class="sec-hdr"><div class="sec-title">Cluster Analysis</div><div class="sec-hdr-line"></div><div class="sec-meta">Full Claude analysis</div></div><p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">CANARY BRIEF</p>
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;">An F-15E is down over Iran, Trump is giving Tehran 48 hours, and Europe's energy ministers are already drafting windfall-profit taxes on the price surge — yet the most crowded trade in the room this morning is still mega-cap tech. A bipartisan pair of House members quietly bought <strong style="color:#e8e2d6;">Home Depot</strong> in February and March while the rate-shock story was building, and the Bank of England is now telling 1.3 million UK mortgage holders their borrowing costs are rising because of a war in the Middle East. The sell-side has framed this as an oil-price spike. It is not a spike. It is a duration story, and almost nobody has updated their interest-rate assumptions to match. No insider flow or options signals today — conviction ceiling is lower than usual; size at 50-60% until T1 returns. Two high-conviction trades. One structural thesis. Read time: 5 minutes.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">CLUSTER ANALYSIS</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><strong style="color:#e8e2d6;">CLUSTER 1: The Iran War Is Not An Oil Spike — It's A Rate Shock, And UK Mortgage Holders Are The Canary</strong></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signals:</strong> rss_news (Tier 2, Signals 5, 8, 9) — geopolitical, macro, European energy windfall tax</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The story:</strong> Three separate news threads are converging on the same underlying mechanism, and the market is treating each one separately. Signal 9 is the most acute: a US F-15E shot down over Iran, an active search for a missing airman, and Trump issuing a 48-hour ultimatum. This is not a routine escalation. The Strait of Hormuz is in play. Signal 5 gives you the first downstream consequence: eurozone inflation jumped from 1.9% to 2.5% in a single month — largely energy-driven — and European energy ministers are already debating windfall-profit taxes. Signal 8 is the one that the mortgage market hasn't priced: the Bank of England is explicitly warning that sustained high energy prices feed through to UK CPI, which feeds through to rate expectations, which hits 1.3 million variable-rate and soon-to-refix UK mortgage holders. The last time we saw this pattern — a geopolitical shock treated as transient while its duration implications quietly restructured the rate curve — was 2022. Everyone called it a spike. The BoE hiked fourteen times. The mechanism here is identical: energy persistence → CPI persistence → rate persistence → housing market stress. The market is pricing the spike, not the duration.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The trade:</strong> Two separate expressions of the same thesis. First: energy majors are not priced for duration — the windfall-tax risk caps the upside on European producers specifically, making <strong style="color:#e8e2d6;">SHEL</strong> and <strong style="color:#e8e2d6;">BP</strong> a more nuanced play than US peers. <strong style="color:#e8e2d6;">XOM</strong> and <strong style="color:#e8e2d6;">CVX</strong> carry less windfall-tax political risk and more benefit from sustained prices. Second: UK rate-sensitive assets are mispriced. If the BoE holds higher for longer due to energy-driven CPI, UK homebuilders get hit hardest — specifically <strong style="color:#e8e2d6;">BDEV.L</strong> (Barratt Developments) and <strong style="color:#e8e2d6;">TW.L</strong> (Taylor Wimpey), both of which carry significant exposure to mortgage availability and buyer confidence. The short on UK homebuilders is the cleaner expression of the BoE/Iran thesis because it's the furthest from consensus and most directly mechanically linked.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Exposed companies:</strong></p>
+<div style="height:8px;"></div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #2a2a2a;margin:10px 0 16px 0;"><tr style="background-color:#222222;"><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Ticker</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Direction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Why</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">XOM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Sustained high oil prices; no European windfall-tax exposure</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">CVX</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Same rationale as XOM; cleaner than European peers</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">SHEL</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Long (partial/cautious)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Benefits from oil prices but faces windfall-tax political risk</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">BP</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Long (partial/cautious)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Same windfall-tax caveat as SHEL; UK political risk elevated</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">BDEV.L</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↓ Short</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Direct BoE rate-shock transmission; buyer confidence most exposed</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">TW.L</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↓ Short</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Same UK housing mechanism; elevated mortgage rate sensitivity</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">ITA</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">US defence posture escalating; sustained conflict = sustained procurement</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">GLD</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Safe-haven bid in sustained geopolitical uncertainty</td></tr></table>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Early or late?</strong> The energy-price story is consensus. The <em style="color:#c8a84e;">duration</em> read-through to UK rates and homebuilders is not — that's where the edge lives.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Risk/Reward:</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Upside case:</em> Iran conflict persists beyond 30 days, BoE language shifts hawkish at next meeting, UK homebuilders sell off 10-15% from current levels. XOM/CVX add 8-12% on sustained $95+ Brent.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Downside case:</em> Rapid de-escalation (ceasefire, back-channel diplomacy) collapses the energy-price bid. XOM/CVX give back 5-7%. UK homebuilder short gets squeezed if BoE signals rate cuts on growth concerns.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Key risk:</em> A Trump-brokered ceasefire announced within 48 hours flips the whole thesis. The 48-hour ultimatum is the live fuse — it could resolve the event OR escalate it into a structural conflict.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Stop-loss catalyst:</em> Any credible ceasefire announcement or significant Brent drop below $80. Also watch for BoE governor language that explicitly de-links energy prices from their rate path.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Position sizing:</em> 1-1.5% each in XOM and BDEV.L short — tactical, not core. Energy via ITA at 0.5-1% as a pure defence overlay. No single position dominates given the binary ceasefire risk.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">What to monitor:</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Trump 48-hour deadline (next 48 hours):</strong> If it passes without a strike or ceasefire, markets reassess — either escalation builds or the ultimatum is exposed as theatre.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">BoE governor Baily commentary this week:</strong> Any explicit linkage between energy prices and rate-path expectations upgrades the UK homebuilder short to high conviction immediately.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">European windfall-profit tax legislative language:</strong> If the EU moves from discussion to formal proposal, SHEL and BP underperform XOM/CVX materially — rotate within the energy long.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Time horizon:</strong> WEEKS — the BoE rate-path repricing and UK housing market impact will take 2-6 weeks to show up in price action and consensus estimates.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Conviction:</strong> MEDIUM — The geopolitical mechanism is clear and well-reasoned, but the 48-hour binary (ceasefire vs. escalation) makes sizing discipline essential. No T1 flow to confirm.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><strong style="color:#e8e2d6;">CLUSTER 2: Congress Bought The Home Improvement Trade While The Rate Shock Was Building</strong></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signals:</strong> congressional_trading (Tier 1, Signal 20) — bipartisan cluster buy, HD</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The story:</strong> On February 24 and March 12, Republican David Taylor (OH) and Democrat Ro Khanna (CA) both purchased <strong style="color:#e8e2d6;">Home Depot</strong> stock. Bipartisan cluster buys are the highest-quality congressional signal precisely because they remove the partisan-policy-bet explanation — these two members have almost no shared political incentive. The trade date span is 16 days (Feb 24 to Mar 12), which is tight enough to read as contemporaneous positioning, not coincidence. Khanna sits on the House Armed Services Committee and has visibility into defence and economic policy; Taylor sits on the Financial Services Committee. Neither has an obvious sector-specific rationale for HD — which makes the shared conviction more interesting, not less. One credible read: if a domestic infrastructure or housing stimulus package is in legislative discussion, home improvement retail is a primary beneficiary. HD has approximately $160B in annual revenue with roughly 70% exposure to the professional/contractor segment — the part of the business that benefits most from construction and renovation activity. The staleness concern is real — the trades are 11-39 days old. Check HD's price action since February 24 before acting.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The trade:</strong> If HD is flat to modestly down since Feb 24 entry, the congressional edge has not been priced. Long HD at current levels, weeks horizon. If HD is up more than 8% since late February, the edge is largely in the price — pass or wait for a pullback.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Exposed companies:</strong></p>
+<div style="height:8px;"></div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #2a2a2a;margin:10px 0 16px 0;"><tr style="background-color:#222222;"><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Ticker</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Direction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Why</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">HD</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Bipartisan cluster buy; potential infrastructure/stimulus read-through</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">LOW</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Long (secondary)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Same sector beneficiary if stimulus thesis is correct; less direct signal</td></tr></table>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Early or late?</strong> Partially priced if HD has rallied since February. The signal itself — the bipartisan purchase — is not yet in sell-side estimates or consensus. The <em style="color:#c8a84e;">catalyst</em> (potential stimulus or policy announcement) is not yet public.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Risk/Reward:</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Upside case:</em> Legislative infrastructure or housing package announced in coming weeks — HD rallies 10-15% as professional segment volume estimates get upgraded.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Downside case:</em> Rate-shock thesis (Cluster 1) dominates, consumer confidence deteriorates, housing starts fall. HD gives back 8-12% as renovation activity slows.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Key risk:</em> The Iran/rate-shock thesis in Cluster 1 is the direct contradiction — rising mortgage rates suppress home improvement spending. These two clusters are in tension.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Stop-loss catalyst:</em> BoE or Fed language shifting hawkish in a sustained manner, OR HD's next earnings call showing professional segment deceleration.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Position sizing:</em> 0.75-1% tactical position, conditional on price verification. This is a congressional signal, not an insider buy — size it accordingly.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">What to monitor:</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">HD's price action since February 24:</strong> If HD is flat or down, initiate at current levels. If up &gt;8%, monitor for re-entry on weakness.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Any legislative language on domestic infrastructure spending:</strong> A bill or executive order touching renovation/construction is the catalyst that transforms this from signal to trade.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">HD's next earnings release:</strong> The professional segment revenue line will confirm or deny the underlying thesis.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Time horizon:</strong> WEEKS — congressional trades typically play out over 4-8 weeks as the underlying catalyst materialises.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Conviction:</strong> MEDIUM — Bipartisan cluster is a genuine quality signal. The staleness (up to 39 days) and the direct tension with the Iran/rate-shock thesis keep this from going higher. Verify price action before sizing.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><strong style="color:#e8e2d6;">CLUSTER 3: Block Inc. Is Getting Hammered In The Complaint Queue</strong></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signals:</strong> cfpb_complaints (Tier 3, Signal 15), niche_forums (Tier 3, Signal 7 — mislabelled as SQ, but CFPB data is the operative signal)</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The story:</strong> Block Inc. (<strong style="color:#e8e2d6;">SQ</strong>) received 599 CFPB consumer complaints in the last 14 days. The top issues are account management failures and trouble accessing funds in mobile/digital wallets — precisely the friction points that drive user churn in fintech. For context, 599 complaints in 14 days is a material volume for a company of SQ's profile; the top products flagged (money transfer, virtual currency, digital wallets) are the Cash App ecosystem, which represents approximately 40% of SQ's gross profit. CFPB complaint spikes historically precede two things: increased regulatory scrutiny (the CFPB can and does use complaint data to trigger investigations) and user attrition. The ticker mislabelling note: Signal 7 (NextDNS on Android) has nothing to do with SQ — the &quot;convergence&quot; flag there is a false positive from the pipeline's matching logic. The CFPB data alone is the signal. It's not an extraordinary signal, but it's a canary.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The trade:</strong> Not a clean short setup on its own — SQ has significant institutional support and the complaints may reflect growth pains rather than structural decay. But the CFPB complaint volume warrants monitoring the Cash App monthly active user trend in the next earnings report. If user growth slows while complaints are at this level, the margin structure deteriorates faster than consensus estimates. This is a <em style="color:#c8a84e;">watch and monitor</em> setup, not an immediate position.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Exposed companies:</strong></p>
+<div style="height:8px;"></div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #2a2a2a;margin:10px 0 16px 0;"><tr style="background-color:#222222;"><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Ticker</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Direction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Why</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">SQ</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↓ Cautious/Watch</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">CFPB complaint volume elevated; Cash App ecosystem friction rising</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">PYPL</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Relative (secondary)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">If Cash App users churn, PayPal/Venmo is the primary beneficiary</td></tr></table>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Early or late?</strong> Early — CFPB complaint data is not in sell-side models. This is pre-financial-system.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">What to monitor:</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">SQ's next earnings — Cash App MAU and gross profit per user:</strong> The complaint volume only becomes a trade if it shows up in engagement metrics.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Any CFPB enforcement action or formal inquiry announcement:</strong> That escalates this from &quot;watch&quot; to &quot;short immediately.&quot;</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">PYPL app store rankings and user acquisition trends:</strong> If Cash App is losing users, Venmo rankings should be improving.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Time horizon:</strong> MONTHS — complaint-to-churn-to-earnings takes a full quarter to manifest.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Conviction:</strong> LOW-MEDIUM — Single-source CFPB data, no T1 confirmation, and the ticker mislabelling in Signal 7 means the &quot;convergence&quot; flag is unreliable. Note and watch.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><strong style="color:#e8e2d6;">CLUSTER 4: Nike Beat But The Context Is Everything</strong></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signals:</strong> earnings_calls (Tier 2, Signal 19) — NKE reported March 31</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The story:</strong> <strong style="color:#e8e2d6;">NKE</strong> printed EPS of $0.35 vs. the $0.29 estimate — a 20.7% beat — on revenue of $11.28B vs. $11.23B expected (+0.5%). The EPS beat is real but driven primarily by cost actions, not volume growth. Revenue was essentially in line on a consensus basis. In a tariff environment where NKE sources approximately 97% of its footwear from Asia (primarily Vietnam and China), the forward margin story is the operative question — not the backward-looking beat. The market typically gives NKE a 1-2 day grace period after a beat before the &quot;but what about tariffs&quot; question reasserts. This was reported on March 31, five days ago. The initial reaction is likely already priced. The ongoing tariff exposure is not.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The trade:</strong> NKE is not a clean long here — the beat was cost-driven and the tariff overhang is structural. Nor is it an obvious short given that the beat provides near-term technical support. This is a hold and evaluate setup. The more interesting angle: if NKE absorbs tariff costs rather than passing them to consumers (to protect market share), the margin structure deteriorates in Q3-Q4. If it raises prices, volume softens. Either way, the sell-side hasn't updated forward estimates to account for the full tariff cost pass-through.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Exposed companies:</strong></p>
+<div style="height:8px;"></div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #2a2a2a;margin:10px 0 16px 0;"><tr style="background-color:#222222;"><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Ticker</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Direction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Why</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">NKE</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">→ Neutral/Watch</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Beat is priced; forward tariff impact not in estimates</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">UA</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↓ Cautious</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Same supply chain exposure; smaller brand premium to absorb costs</td></tr></table>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Early or late?</strong> The beat is priced. The tariff margin impact is early — not yet in Q3/Q4 estimates.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">What to monitor:</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">NKE's next IR communication or analyst day:</strong> Any forward guidance on tariff cost absorption vs. price pass-through is the catalyst.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Vietnam/China tariff rate changes:</strong> Any escalation in Asia tariff rates directly hits NKE's cost structure.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Time horizon:</strong> MONTHS — tariff margin impact plays out over the next 2-3 quarters.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Conviction:</strong> LOW — The beat creates a ceiling on near-term downside, but the forward thesis isn't strong enough for an active position today.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:16px 0 4px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#e8e2d6;">LOW SIGNAL — NOTED AND DISMISSED</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signal 1/3 — Walmart Worcester fulfilment centre closure (WMT):</strong> A single warehouse closure in Massachusetts is operational noise. Walmart opens and closes facilities constantly. The &quot;needohs restock&quot; Google Trends spike is a product-specific search with no material financial read-through. One discontinued SKU search trend does not move WMT earnings. Noted and dismissed.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signal 4/16 — SOFI YouTube hair loss video + 12 CFPB complaints:</strong> The YouTube signal is for &quot;Sofia Hair Health,&quot; a private consumer brand — the ticker match to <strong style="color:#e8e2d6;">SOFI</strong> (SoFi Technologies) is a mislabelling. Zero relevance to the fintech. Twelve CFPB complaints in 14 days is below any materiality threshold. Dismissed entirely.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signal 6 — Buffett/Gates/Epstein (CMCSA):</strong> The Buffett philanthropy story has no investable angle, and the ticker match to Comcast is a pipeline mislabelling. Dismissed.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signal 7 — NextDNS on Android (SQ):</strong> About a DNS filtering app. No connection to Block Inc. Ticker mislabelling confirmed. The CFPB data in Signal 15 covers the SQ thesis independently.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signal 10/17 — E-bike/power station sales (HIMS) and generic DevOps Reddit post (HIMS):</strong> Ticker matches to Hims &amp; Hers are false positives. An e-bike sale and a Kubernetes onboarding game have no connection to a telehealth company. Dismissed.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signal 11 — Kubernetes game on Reddit (UBER):</strong> A DevOps community post about SRE onboarding matched to Uber. Ticker is a mislabelling. No signal.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signal 12 — Apple/Nvidia eGPU drivers (AAPL):</strong> Interesting developer news but not an investable signal — this is a driver compatibility update, not a product launch or revenue catalyst. Noted; too thin for a cluster.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signal 13 — &quot;How to unsubscribe from Amazon Music&quot; search spike (AMZN):</strong> A 140% search spike for unsubscribe instructions is mildly bearish for Amazon Music but Amazon Music is not a material revenue line for AMZN. This is noise at the entity level.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signal 14 — Oracle OCI upgrade (ORCL):</strong> A Seeking Alpha analyst upgrade is a published opinion, not a proprietary signal. Already in the market. The ORCL/Iran/Dubai news (Signal 9 — debris from interception struck an Oracle building in Dubai) is the more interesting angle, but it's already on CNBC and priced.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signal 18 — NVO Reddit Ozempic activity (NVO):</strong> r/Ozempic community posts about rules and shame spirals are not a trading signal for Novo Nordisk. Ongoing GLP-1 adoption continues, but this specific Reddit activity has no news content.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">SUMMARY SCORECARD</p>
+<div style="height:8px;"></div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #2a2a2a;margin:10px 0 16px 0;"><tr style="background-color:#222222;"><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Cluster</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Ticker</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Direction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Conviction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Horizon</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Thesis</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Iran/Rate Duration</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">XOM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MEDIUM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">WEEKS</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Market pricing oil spike; BoE/ECB rate implications of sustained energy prices not in consensus</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Iran/Rate Duration</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">BDEV.L</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↓ Short</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MEDIUM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">WEEKS</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Iran conflict → persistent UK CPI → BoE higher-for-longer → UK homebuilder demand destruction unpriced</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Iran/Rate Duration</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">ITA</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MEDIUM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">WEEKS</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Sustained US military engagement drives defence procurement; conflict duration mispriced</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Congressional HD</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">HD</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑ Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MEDIUM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">WEEKS</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Bipartisan cluster buy suggests domestic policy catalyst (infrastructure/stimulus) not yet in sell-side models</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Block CFPB</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">SQ</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↓ Watch</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">LOW-MEDIUM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MONTHS</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">599 CFPB complaints in 14 days on core Cash App products; pre-churn signal not in earnings estimates</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Nike Tariff Lag</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">NKE</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">→ Neutral</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">LOW</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MONTHS</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">EPS beat is priced; forward tariff cost absorption vs. price-hike dilemma not yet in Q3/Q4 estimates</td></tr></table>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">SOCIAL ARBITRAGE CLUSTER</p>
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><strong style="color:#e8e2d6;">Cluster thesis: Consumer signals today are fragmented and largely dominated by ticker mislabelling and low-materiality search trends — the one genuine consumer signal is a modest delivery platform defection story, and the broader theme is friction-driven consumer retrenchment as energy costs rise.</strong></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">DELIVERY PLATFORM PUSHBACK</strong> — 2 converging signals (niche_forums, reddit)</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;">Rave Restaurant Group (Pizza Inn's owner) has cut ties with Uber Eats, citing unprofitable order economics and a deliberate pivot to dine-in value offerings. This appeared on restaurant trade forums and was picked up in Reddit food service communities. It's a small operator, but it's the leading edge of a pattern: as input costs rise (energy, food costs) and delivery platform take-rates remain elevated (15-30%), the margin math for small chains stops working. <strong style="color:#e8e2d6;">UBER</strong> is the primary exposed ticker. The signal direction is modestly bearish — not because one chain leaving matters, but because it represents a category of operator (small-to-mid QSR) that is the growth frontier for platform expansion. If this cohort starts defecting at scale, Uber Eats' volume growth estimates need revisiting.</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><em style="color:#c8a84e;">Tickers: UBER ↓ (WEEKS, monitor) · DNUT, DPZ — similar platform dependency risk</em></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">OZEMPIC COMMUNITY STILL ACTIVE (NVO/LLY)</strong> — 3 consumer sources (niche_forums, reddit, youtube)</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;">The r/Ozempic community continues generating high-engagement posts (659 upvotes, 160 comments across multiple threads). The content mix — rule reminders, shame spirals around overeating, and alcohol-suppression questions — reads as a deeply embedded, behaviorally sticky community. This is not new information about NVO or LLY earnings, but it is a continuous confirmation that GLP-1 adoption is behaviorally entrenched, not a transient prescription cycle. The consumer adoption is structural.</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><em style="color:#c8a84e;">Tickers: LLY ↑ (structural) · NVO ↑ (structural, despite competitive pressure)</em></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">AMAZON MUSIC FRICTION RISING</strong> (source: Google Trends, +140% &quot;how to unsubscribe&quot;)</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;">At 140%, the search spike is material enough to note. Amazon Music has roughly 100M subscribers globally but is not a primary AMZN revenue contributor — this sits inside the Amazon Prime ecosystem. The more interesting read: if consumers are actively seeking to <em style="color:#c8a84e;">remove</em> subscriptions, this is early-stage cost-rationalisation behaviour consistent with the broader energy-cost/mortgage-rate squeeze thesis. Not a direct AMZN trade, but corroborating evidence for the consumer spending tightening narrative.</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><em style="color:#c8a84e;">Tickers: AMZN → (no direct trade, context only)</em></p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">WHAT TO WATCH</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Trump Iran ultimatum expiry — next 48 hours:</strong> If the 48-hour window passes without a US military strike or credible ceasefire, markets must reprice the geopolitical risk as sustained rather than acute. Confirms: hold XOM/CVX longs and BDEV.L short — the duration thesis is real. Fails if: a formal ceasefire or back-channel diplomatic announcement lands — close energy longs and reverse UK homebuilder position.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">BDEV.L / TW.L price action this week:</strong> If UK homebuilders trade down more than 3% on BoE commentary linking energy to rate expectations, this becomes a higher-conviction short with momentum behind it. Confirms: add to short BDEV.L and TW.L positions. Fails if: BoE explicitly de-links energy from rate path (&quot;transitory&quot; language returns) — thesis is broken, cover immediately.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">HD price action since February 24 — verify before acting:</strong> Pull HD's chart from Feb 24. If flat to down 5%, the congressional cluster buy is unpriced — initiate 0.75-1% long today. If HD is up more than 8%, the edge is in the price — wait for a pullback to the $380 area before entering. Confirms: any legislative language on domestic infrastructure spending this week. Fails if: HD reports professional segment deceleration in next earnings.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">CFPB enforcement calendar for Block Inc. (SQ):</strong> Watch for any formal CFPB inquiry announcement or consent order targeting SQ's Cash App money transfer operations. At 599 complaints in 14 days, the regulatory review risk is non-trivial. Confirms: if a formal inquiry is announced, initiate short SQ at 1% tactical. Fails if: next SQ earnings show Cash App MAU growth accelerating despite complaints — structural product stickiness outweighs friction.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Uber Eats restaurant partner churn — next 2-4 weeks:</strong> Watch restaurant trade publications and UBER's next management commentary for any acknowledgment of small-chain partner attrition. One operator leaving is noise; a pattern of defections is a volume growth story that hasn't been told yet. Confirms: two or more similar defection announcements in the next 30 days — begin building a cautious short position in UBER on delivery segment growth. Fails if: UBER announces new partner incentive programmes or volume growth data contradicts the attrition thesis.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">EDGE SIGNALS</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">[GEOPOLITICAL|MEDIUM]</strong> Trump's 48-hour Iran ultimatum has created a binary that the energy and rate markets are pricing as a spike event, not a structural one — buy <strong style="color:#e8e2d6;">XOM</strong> and <strong style="color:#e8e2d6;">CVX</strong> (windfall-tax-free US producers) as the duration play; simultaneously short <strong style="color:#e8e2d6;">BDEV.L</strong> and <strong style="color:#e8e2d6;">TW.L</strong> as the BoE rate-persistence trade, with the trigger being either the ultimatum expiry (escalation scenario) or UK CPI data this week above 3.5% (rate-lock-in scenario); weeks horizon.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">[GEOPOLITICAL|MEDIUM]</strong> The Iran conflict's defence procurement read-through is weeks ahead of consensus — initiate a 0.5-1% long in <strong style="color:#e8e2d6;">ITA</strong> (iShares US Aerospace &amp; Defence ETF) as the cleanest, most diversified expression of sustained US military engagement; the catalyst is any announced US strike or formal military operation within the 48-hour window; if the ultimatum passes without action, reduce to monitoring only.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">[CONGRESSIONAL|MEDIUM]</strong> A bipartisan House cluster buy in <strong style="color:#e8e2d6;">HD</strong> — Republican Taylor (OH) and Democrat Khanna (CA) both purchased within 16 days of each other in February-March — suggests a domestic policy catalyst (infrastructure or housing stimulus) not yet in consensus estimates; verify HD is flat to down since Feb 24 before initiating a 0.75-1% tactical long (if HD is up more than 8% since then, the edge is priced — pass); catalyst to watch is any legislative language on domestic construction or renovation stimulus in the next 3-4 weeks.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">[SECTOR|LOW-MEDIUM]</strong> Uber Eats is losing the margin math argument with small QSR chains — Rave Restaurant Group's defection signals a category of operator (small-to-mid chains with sub-20% delivery margins) that the market hasn't modelled as a churn cohort; monitor <strong style="color:#e8e2d6;">UBER</strong> delivery segment volume growth assumptions, with the thesis upgrade trigger being two or more additional partner defections in the next 30 days; weeks-to-months horizon.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">[META|MEDIUM]</strong> Pipeline blind spot today: no <code style="font-family:'SF Mono','Roboto Mono','Fira Code',monospace;color:#b09a5a;background:#1e1e1e;padding:1px 4px;">sec_insider</code> and no <code style="font-family:'SF Mono','Roboto Mono','Fira Code',monospace;color:#b09a5a;background:#1e1e1e;padding:1px 4px;">options_flow</code> signals present — the highest-conviction T1 sources are absent, which materially lowers the ceiling on all theses above; size all positions at 50-60% of normal allocation until T1 flow returns. Multiple ticker mislabellings detected today (SOFI ≠ Sofia Hair Health, SQ ≠ NextDNS, CMCSA ≠ Epstein/Buffett, ORCL ≠ Dubai debris) — treat any pipeline &quot;convergence&quot; flag with extra scepticism.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">CANARY CHIRPS</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Delivery platform economics deteriorating faster than Uber's guidance implies.</strong> Pizza Inn's defection is one data point, but the underlying arithmetic — rising food costs, sustained energy prices, and platform take-rates that haven't moved — is getting worse, not better. If two or more additional small-chain defections surface in the next 2-3 weeks, this becomes an Edge Signal on <strong style="color:#e8e2d6;">UBER</strong> delivery segment estimates. Watch restaurant trade press.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Apple/Nvidia eGPU driver approval signals a quiet thaw in the Apple-Nvidia ecosystem relationship.</strong> Developer forums are buzzing about Nvidia eGPUs now working with ARM Macs — a small but non-trivial signal that Apple may be opening compute architecture doors it had previously kept shut. If this expands to data-centre or inference workload collaboration language at WWDC (June), the read-through to <strong style="color:#e8e2d6;">NVDA</strong>'s addressable market gets materially wider. Too early for a trade; worth watching the developer community response over the next 30 days.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Amazon Music churn search spike may be the first detectable edge of a broader Prime subscription rationalisation wave.</strong> A 140% spike in &quot;how to unsubscribe from Amazon Music&quot; is probably tariff-anxiety-driven cost-cutting at the household level. If similar spikes emerge for &quot;how to cancel Prime&quot; or &quot;Amazon Prime alternatives&quot; in the next 2-4 weeks, the narrative around <strong style="color:#e8e2d6;">AMZN</strong>'s subscription revenue resilience (currently near-consensus-bullish) deserves revisiting. Early stage; set a Google Trends alert.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">NVO community engagement remains structurally high, but the content is shifting from &quot;does it work?&quot; to &quot;why did I overeat?&quot; — a behavioural entrenchment signal.</strong> The r/Ozempic community's top posts this week are about emotional relationships with food and alcohol suppression, not initial weight loss efficacy. This is a community past the trial phase and embedded in long-term use. The market already knows GLP-1 adoption is large; what it hasn't modelled is the <em style="color:#c8a84e;">behavioural stickiness</em> that converts trial users into decade-long customers. The <strong style="color:#e8e2d6;">LLY</strong> vs. <strong style="color:#e8e2d6;">NVO</strong> competitive divergence thesis is building in consumer communities before it reaches analyst models — a potential structural upgrade to <strong style="color:#e8e2d6;">LLY</strong> long if the oral GLP-1 pipeline (orforglipron) provides a frictionless entry point for this exact cohort.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">THE CLOSE</p>
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;">By the time the Bank of England publishes its next formal assessment linking Iran-driven energy prices to the UK rate path — likely 2-3 weeks away — you'll have had a fortnight to build the <strong style="color:#e8e2d6;">BDEV.L</strong> short and the <strong style="color:#e8e2d6;">XOM</strong> duration trade before a single sell-side note connects those two dots.</p></div>
+
+  </div>
+</div>
+
+<script>
+function updateClock(){var n=new Date();document.getElementById('clock').textContent=n.toTimeString().slice(0,8);}
+setInterval(updateClock,1000);updateClock();
+
+function show(id,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(el)el.classList.add('active');
+}
+
+function toggleCard(hdr){hdr.closest('.signal-card').classList.toggle('open');}
+
+function filterSector(s){
+  document.querySelectorAll('.signal-card').forEach(c=>{
+    if(s==='all'){c.style.display='';return;}
+    c.style.display=c.dataset.sector===s?'':'none';
+  });
+}
+
+function filterDir(d,btn){
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active-f'));
+  if(btn)btn.classList.add('active-f');
+  document.querySelectorAll('.data-table tbody tr').forEach(r=>{
+    if(d==='all'){r.style.display='';return;}
+    var dir=r.querySelector('.dir-up')?'bullish':r.querySelector('.dir-dn')?'bearish':'ambiguous';
+    r.style.display=dir===d?'':'none';
+  });
+}
+
+function searchSignals(q){
+  q=q.toLowerCase();
+  document.querySelectorAll('.data-table tbody tr').forEach(r=>{
+    r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';
+  });
+}
+
+document.addEventListener('keydown',(e)=>{
+  var sections=['overview','signals','sectors','timeline','performance'];
+  var idx=parseInt(e.key)-1;
+  if(idx>=0&&idx<sections.length){var ni=document.querySelectorAll('.nav-item');show(sections[idx],ni[idx]);}
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();show('signals',document.querySelectorAll('.nav-item')[1]);document.getElementById('signalSearch').focus();}
+});
+</script>
+</body>
+</html>

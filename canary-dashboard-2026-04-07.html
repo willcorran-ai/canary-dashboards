@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canary — Dashboard · 07 Apr 2026</title>
+<style>
+:root {
+  --canary: #c8a84e; --canary-dim: #8a7a3a; --canary-bg: #2a2520; --canary-border: #3d3529;
+  --bg0: #0e0e0e; --bg1: #141414; --bg2: #1a1a1a; --bg3: #1e1e1e; --bg4: #222222;
+  --border: #2a2a2a; --border-light: #333333;
+  --text0: #e8e2d6; --text1: #d4cfc4; --text2: #b0a898; --text3: #8a8578; --text4: #5a564e; --text5: #3a3530;
+  --green: #6b9e78; --green-dim: #3a5a42; --green-bg: #1a2520;
+  --red: #9e6b6b; --red-dim: #5a3a3a; --red-bg: #251a1a;
+  --blue: #6a8fa8; --blue-dim: #3a5568; --blue-bg: #1a2530;
+  --amber: #b09a5a; --amber-dim: #6a5a30;
+  --font-sans: 'Inter','Helvetica Neue',Helvetica,Arial,sans-serif; --font-mono: 'SF Mono','Roboto Mono','Fira Code',monospace; --font-data: 'SF Mono','Roboto Mono','Fira Code',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg0);color:var(--text1);font-family:var(--font-sans);font-size:13px;height:100vh;overflow:hidden;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
+#hdr{height:48px;background:var(--bg1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;flex-shrink:0;position:relative;}
+#hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--canary-dim),transparent);opacity:0.3;}
+.hdr-brand{display:flex;align-items:center;gap:10px;margin-right:24px;}
+.hdr-wordmark{font-size:16px;font-weight:700;color:var(--text0);letter-spacing:3px;text-transform:uppercase;}
+.hdr-meta{display:flex;gap:16px;align-items:center;flex:1;}
+.hdr-tag{font-family:var(--font-mono);font-size:11px;color:var(--text4);letter-spacing:0.5px;}
+.hdr-tag b{color:var(--text3);}
+.hdr-right{display:flex;align-items:center;gap:12px;margin-left:auto;}
+.hdr-clock{font-family:var(--font-data);font-size:13px;color:var(--canary);letter-spacing:1px;font-weight:600;min-width:65px;text-align:right;}
+.signal-badge{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--canary);background:var(--canary-bg);border:1px solid var(--canary-border);padding:3px 10px;}
+#body{display:flex;flex:1;overflow:hidden;}
+#nav{width:200px;background:var(--bg1);border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;padding-top:12px;overflow-y:auto;}
+.nav-section-label{font-family:var(--font-mono);font-size:9px;color:var(--text5);letter-spacing:3px;text-transform:uppercase;padding:14px 16px 6px 16px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-left:2px solid transparent;transition:all .15s;}
+.nav-item:hover{background:var(--bg2);border-left-color:var(--border-light);}
+.nav-item.active{background:var(--bg3);border-left-color:var(--canary);}
+.nav-label{font-size:12px;color:var(--text3);letter-spacing:0.5px;}
+.nav-item.active .nav-label{color:var(--text0);}
+.nav-badge{margin-left:auto;font-family:var(--font-mono);font-size:10px;background:var(--bg4);border:1px solid var(--border);padding:1px 6px;color:var(--text4);}
+.nav-badge.gold{border-color:var(--canary-border);color:var(--canary);}
+.nav-divider{height:1px;background:var(--border);margin:8px 0;}
+.nav-stats{padding:14px 16px;margin-top:auto;border-top:1px solid var(--border);}
+.nav-stat-row{display:flex;justify-content:space-between;padding:3px 0;}
+.nav-stat-key{font-family:var(--font-mono);font-size:10px;color:var(--text5);}
+.nav-stat-val{font-family:var(--font-data);font-size:10px;color:var(--canary-dim);font-weight:600;}
+#main{flex:1;overflow-y:auto;background:var(--bg0);}
+.section{display:none;padding:20px 24px;}
+.section.active{display:block;}
+.sec-hdr{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.sec-title{font-family:var(--font-mono);font-size:11px;color:var(--canary);letter-spacing:3px;text-transform:uppercase;font-weight:600;}
+.sec-hdr-line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.sec-meta{font-family:var(--font-mono);font-size:10px;color:var(--text4);}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);padding:16px 18px;transition:border-color .2s;}
+.stat-card:hover{border-color:var(--border-light);}
+.stat-val{font-family:var(--font-data);font-size:28px;font-weight:700;color:var(--canary);line-height:1;}
+.stat-lbl{font-family:var(--font-mono);font-size:9px;color:var(--text4);letter-spacing:2px;text-transform:uppercase;margin-top:6px;}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+.signal-card{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--border-light);margin-bottom:12px;overflow:hidden;transition:border-color .2s;}
+.signal-card:hover{border-color:var(--border-light);}
+.signal-card.bullish{border-left-color:var(--green);}
+.signal-card.bearish{border-left-color:var(--red);}
+.signal-card.ambiguous{border-left-color:var(--amber);}
+.signal-card.hero{border-left-color:var(--canary);background:var(--canary-bg);border-color:var(--canary-border);}
+.signal-hdr{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none;}
+.signal-hdr:hover{background:var(--bg3);}
+.signal-title{flex:1;font-size:14px;font-weight:600;color:var(--text0);line-height:1.4;}
+.signal-body{display:none;padding:0 18px 16px 18px;border-top:1px solid var(--border);}
+.signal-card.open .signal-body{display:block;padding-top:14px;}
+.signal-expand{color:var(--text4);font-size:11px;transition:.2s;}
+.signal-card.open .signal-expand{transform:rotate(90deg);}
+.analysis-text{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;}
+.badge{font-family:var(--font-mono);font-size:9px;padding:2px 8px;border:1px solid;letter-spacing:1px;text-transform:uppercase;display:inline-block;white-space:nowrap;}
+.badge.green{color:var(--green);border-color:var(--green-dim);background:var(--green-bg);}
+.badge.red{color:var(--red);border-color:var(--red-dim);background:var(--red-bg);}
+.badge.blue{color:var(--blue);border-color:var(--blue-dim);background:var(--blue-bg);}
+.badge.gold{color:var(--canary);border-color:var(--canary-border);background:var(--canary-bg);}
+.badge.dim{color:var(--text4);border-color:var(--border);background:var(--bg3);}
+.sector-tag{font-family:var(--font-mono);font-size:10px;color:var(--text3);background:var(--bg4);border:1px solid var(--border-light);padding:3px 8px;letter-spacing:1px;text-transform:uppercase;}
+.dir-up{color:var(--green);font-size:14px;font-weight:700;}
+.dir-dn{color:var(--red);font-size:14px;font-weight:700;}
+.dir-amb{color:var(--amber);font-size:12px;}
+.score-dots{display:inline-flex;gap:3px;vertical-align:middle;}
+.score-dots .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.score-dots .dot.on{background:var(--canary);}
+.score-dots .dot.off{background:var(--bg4);border:1px solid var(--border);}
+.conf-meter{display:flex;align-items:center;gap:8px;}
+.conf-bar-track{width:100px;height:5px;background:var(--bg4);position:relative;overflow:hidden;}
+.conf-bar-fill{height:100%;background:var(--canary);transition:width .3s;}
+.conf-val{font-family:var(--font-data);font-size:12px;font-weight:700;color:var(--canary);}
+.sparkline{display:inline-flex;align-items:flex-end;gap:2px;height:32px;}
+.spark-bar{width:5px;background:var(--canary-border);transition:height .3s,background .3s;cursor:pointer;position:relative;}
+.spark-bar.active{background:var(--canary);}
+.spark-bar:hover{background:var(--canary);}
+.spark-tooltip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:9px;color:var(--text0);background:var(--bg4);border:1px solid var(--border-light);padding:2px 6px;white-space:nowrap;z-index:10;}
+.spark-bar:hover .spark-tooltip{display:block;}
+.spectrum-wrap{background:var(--bg2);border:1px solid var(--border);padding:16px 18px;margin-bottom:18px;}
+.spectrum-track{position:relative;height:40px;background:linear-gradient(90deg,var(--red-bg),var(--bg3) 50%,var(--green-bg));border:1px solid var(--border);margin:8px 0;}
+.spectrum-center{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border-light);}
+.spectrum-dot{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--canary);top:50%;transform:translate(-50%,-50%);cursor:pointer;border:2px solid var(--canary-border);transition:all .2s;z-index:2;}
+.spectrum-dot:hover{width:16px;height:16px;border-color:var(--canary);box-shadow:0 0 8px rgba(200,168,78,0.4);}
+.spectrum-labels{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9px;color:var(--text4);letter-spacing:2px;text-transform:uppercase;}
+.heatmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:4px;margin-bottom:18px;}
+.heat-cell{padding:12px 10px;text-align:center;border:1px solid var(--border);cursor:pointer;transition:all .2s;}
+.heat-cell:hover{border-color:var(--canary-border);}
+.heat-cell .heat-label{font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.heat-cell .heat-count{font-family:var(--font-data);font-size:18px;font-weight:700;}
+.heat-cell.hot{background:var(--canary-bg);}
+.heat-cell.hot .heat-count{color:var(--canary);}
+.heat-cell.warm{background:#1e1e1a;}
+.heat-cell.warm .heat-count{color:var(--amber);}
+.heat-cell.cold{background:var(--bg2);}
+.heat-cell.cold .heat-count{color:var(--text4);}
+.timeline{margin-bottom:18px;}
+.timeline-item{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);}
+.timeline-item:last-child{border-bottom:none;}
+.timeline-time{font-family:var(--font-mono);font-size:11px;color:var(--text4);min-width:60px;flex-shrink:0;}
+.timeline-dot{width:8px;height:8px;border-radius:50%;background:var(--canary);margin-top:4px;flex-shrink:0;}
+.timeline-content{flex:1;}
+.timeline-title{font-size:13px;color:var(--text0);font-weight:500;}
+.timeline-desc{font-size:11px;color:var(--text3);margin-top:2px;}
+.data-table{width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--border);margin-bottom:18px;}
+.data-table th{font-family:var(--font-mono);font-size:9px;color:var(--text4);letter-spacing:2px;text-transform:uppercase;text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg3);font-weight:500;}
+.data-table td{padding:10px 14px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border);vertical-align:middle;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--bg3);}
+.ticker-cell{font-family:var(--font-data);font-size:13px;font-weight:700;color:var(--canary);letter-spacing:0.5px;}
+.filter-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.filter-btn{font-family:var(--font-mono);font-size:10px;padding:5px 12px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:.15s;}
+.filter-btn:hover{border-color:var(--border-light);color:var(--text1);}
+.filter-btn.active-f{border-color:var(--canary-border);color:var(--canary);background:var(--canary-bg);}
+.search-bar{display:flex;gap:8px;margin-bottom:16px;}
+.search-input{flex:1;font-family:var(--font-mono);font-size:12px;padding:8px 14px;border:1px solid var(--border);background:var(--bg3);color:var(--text1);outline:none;transition:border-color .2s;}
+.search-input:focus{border-color:var(--canary-border);}
+.search-input::placeholder{color:var(--text5);}
+#main::-webkit-scrollbar,#nav::-webkit-scrollbar{width:4px;}
+#main::-webkit-scrollbar-track,#nav::-webkit-scrollbar-track{background:var(--bg0);}
+#main::-webkit-scrollbar-thumb,#nav::-webkit-scrollbar-thumb{background:var(--border);}
+@media(max-width:768px){#nav{display:none;}.grid-4{grid-template-columns:repeat(2,1fr);}.grid-3{grid-template-columns:1fr;}.heatmap{grid-template-columns:repeat(3,1fr);}}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div class="hdr-brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 3L16 8L20 7L18 12L20 17L14 15L12 21L10 15L4 17L6 12L4 7L8 8L12 3Z" fill="#c8a84e" opacity="0.9"/>
+      <circle cx="13" cy="9" r="1.5" fill="#141414"/>
+    </svg>
+    <span class="hdr-wordmark">CANARY</span>
+  </div>
+  <div class="hdr-meta">
+    <div class="hdr-tag"><b>07 APR 2026</b></div>
+    <div class="hdr-tag">12:52 GMT</div>
+  </div>
+  <div class="hdr-right">
+    <div class="signal-badge">34 signals today</div>
+    <div class="hdr-clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<div id="body">
+  <div id="nav">
+    <div class="nav-section-label">Navigate</div>
+    <div class="nav-item active" onclick="show('overview',this)">
+      <div class="nav-label">Overview</div>
+      <div class="nav-badge gold">34</div>
+    </div>
+    <div class="nav-item" onclick="show('signals',this)">
+      <div class="nav-label">Signals</div>
+      <div class="nav-badge">34</div>
+    </div>
+    <div class="nav-item" onclick="show('sectors',this)">
+      <div class="nav-label">Sector Map</div>
+    </div>
+    <div class="nav-item" onclick="show('timeline',this)">
+      <div class="nav-label">Timeline</div>
+    </div>
+    <div class="nav-item" onclick="show('performance',this)">
+      <div class="nav-label">Performance</div>
+    </div>
+    <div class="nav-item" onclick="show('analysis',this)"><div class="nav-label">Analysis</div></div>
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Sectors</div>
+    
+    <div class="nav-item" onclick="filterSector('other')">
+      <div class="nav-label">Other</div>
+      <div class="nav-badge">34</div>
+    </div>
+    <div class="nav-stats">
+      <div class="nav-stat-row"><div class="nav-stat-key">SOURCES</div><div class="nav-stat-val">21/29</div></div>
+      <div class="nav-stat-row"><div class="nav-stat-key">INGESTED</div><div class="nav-stat-val">471</div></div>
+      <div class="nav-stat-row"><div class="nav-stat-key">FILTERED</div><div class="nav-stat-val">34</div></div>
+      </div>
+  </div>
+
+  <div id="main">
+
+    <!-- OVERVIEW -->
+    <div class="section active" id="overview">
+      <div class="sec-hdr">
+        <div class="sec-title">Daily Digest</div>
+        <div class="sec-hdr-line"></div>
+        <div class="sec-meta">07 Apr 2026 &middot; 34 signals</div>
+      </div>
+
+      <div class="grid-4">
+        <div class="stat-card">
+          <div class="stat-val">471</div>
+          <div class="stat-lbl">Ingested</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">34</div>
+          <div class="stat-lbl">Signals</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--green);">0</div>
+          <div class="stat-lbl">Bullish</div>
+          <div class="stat-sub">0 bearish, 34 ambiguous</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">1</div>
+          <div class="stat-lbl">Sectors</div>
+        </div>
+      </div>
+
+      
+
+      
+      <div class="spectrum-wrap">
+        <p style="font-family:var(--font-mono);font-size:9px;color:var(--text4);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">
+          Conviction Spectrum — Today's Signals</p>
+        <div class="spectrum-track">
+          <div class="spectrum-center"></div>
+          <div class="spectrum-dot" style="left:50%;" title="TSLA &harr; Why safety regulators closed their inves"></div><div class="spectrum-dot" style="left:50%;" title="COST, RDDT &harr; $AMZN Reddit Breakout"></div><div class="spectrum-dot" style="left:50%;" title="JPM, RDDT, TSLA &harr; $TSLA Reddit Breakout"></div><div class="spectrum-dot" style="left:50%;" title="RDDT &harr; $MSFT Reddit Breakout"></div><div class="spectrum-dot" style="left:50%;" title="JPM &harr; what's going on with private credit? why"></div><div class="spectrum-dot" style="left:50%;" title="COST, MDLZ, RDDT &harr; $COST Reddit Breakout"></div><div class="spectrum-dot" style="left:50%;" title="MSFT &harr; Microsoft: Anthropic's $30 Billion ARR S"></div><div class="spectrum-dot" style="left:50%;" title="JPM &harr; JPMorgan Chase (JPM)"></div><div class="spectrum-dot" style="left:50%;" title="WFC &harr; Wells Fargo (WFC)"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Robotaxi companies won’t say how often r"></div><div class="spectrum-dot" style="left:50%;" title="TGT &harr; Iran threatens ‘Stargate’ AI data center"></div><div class="spectrum-dot" style="left:50%;" title="XYZ &harr; Block, Inc."></div><div class="spectrum-dot" style="left:50%;" title="HD &harr; HD"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Official Life in the UK Test"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; This Big Bank Stock Trades at a Discount"></div><div class="spectrum-dot" style="left:50%;" title="ADBE &harr; ADBE"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Weight Loss With GLP-1 Agonists in Nondi"></div><div class="spectrum-dot" style="left:50%;" title="HUIZ &harr; Huize Holding Ltd (HUIZ)"></div><div class="spectrum-dot" style="left:50%;" title="HIMS &harr; Hers"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Issue: Claude Code is unusable for compl"></div><div class="spectrum-dot" style="left:50%;" title="NFLX &harr; Netflix Game Controller"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Rethinking Exploration in RLVR: From Ent"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; GOV.UK One Login"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; ChatGPT"></div><div class="spectrum-dot" style="left:50%;" title="NKE &harr; NKE"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Show HN: Ghost Pepper – Local hold-to-ta"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Show HN: GovAuctions lets you browse gov"></div><div class="spectrum-dot" style="left:50%;" title="ADBE &harr; ADOBE INC (ADBE)"></div><div class="spectrum-dot" style="left:50%;" title="COIN &harr; COIN"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Philips Respironics, Inc."></div><div class="spectrum-dot" style="left:50%;" title="AMZN, PG &harr; Fairy / Amazon Overall (UK)"></div><div class="spectrum-dot" style="left:50%;" title="IDCC &harr; InterDigital, Inc. (IDCC)"></div><div class="spectrum-dot" style="left:50%;" title=" &harr; Genentech"></div><div class="spectrum-dot" style="left:50%;" title="AMZN, PG &harr; Fairy / Amazon Overall (UK)"></div>
+        </div>
+        <div class="spectrum-labels">
+          <span>Bearish</span>
+          <span>Neutral</span>
+          <span>Bullish</span>
+        </div>
+      </div>
+      
+      <div class="signal-card ambiguous hero open" data-sector="" data-dir="ambiguous" data-score="0.95">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          <span class="badge gold">Signal of the Day</span>
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Why safety regulators closed their investigation into Tesla’s remote parking feature</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">TSLA</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · News</span>
+          </div>
+          
+        <div style="margin-bottom:14px;">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text4);letter-spacing:1px;">7-DAY TREND</span>
+          
+          <span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span>
+        </div>
+        <div class="conf-meter" style="margin-bottom:14px;">
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text4);">CONFIDENCE</span>
+          <div class="conf-bar-track"><div class="conf-bar-fill" style="width:95%;"></div></div>
+          <span class="conf-val">0.95</span>
+        </div>
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.95">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">$AMZN Reddit Breakout</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">COST</span> <span style="color:var(--text4);">&middot;</span> <span class="ticker-cell">RDDT</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Reddit</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.95">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">$TSLA Reddit Breakout</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">JPM</span> <span style="color:var(--text4);">&middot;</span> <span class="ticker-cell">RDDT</span> <span style="color:var(--text4);">&middot;</span> <span class="ticker-cell">TSLA</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Reddit</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.95">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">$MSFT Reddit Breakout</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">RDDT</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Reddit</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.95">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">what's going on with private credit? why do people keep talking about it</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">JPM</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Reddit</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.95">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">$COST Reddit Breakout</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">COST</span> <span style="color:var(--text4);">&middot;</span> <span class="ticker-cell">MDLZ</span> <span style="color:var(--text4);">&middot;</span> <span class="ticker-cell">RDDT</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T3 · Reddit</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.95">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Microsoft: Anthropic's $30 Billion ARR Says A Lot (Rating Downgrade)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">MSFT</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">financial_sentiment</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.84">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">JPMorgan Chase (JPM)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">JPM</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">glassdoor_sentiment</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.84">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Wells Fargo (WFC)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">WFC</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">glassdoor_sentiment</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.83">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Robotaxi companies won’t say how often remote operators intervene</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · News</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.78">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Iran threatens ‘Stargate’ AI data centers</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">TGT</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · News</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.67">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Block, Inc.</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">XYZ</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">cfpb_complaints</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.64">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">HD</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">HD</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · Congress</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.63">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Official Life in the UK Test</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T5 · App Store</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.63">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">This Big Bank Stock Trades at a Discount to Book Value -- Is It a Buy?</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">financial_sentiment</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.62">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">ADBE</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">ADBE</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · Congress</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.57">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Weight Loss With GLP-1 Agonists in Nondiabetic Adults: Syste</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T4 · Research</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.55">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Huize Holding Ltd (HUIZ)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">HUIZ</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · Insider</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.54">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Hers</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">HIMS</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T4 · Research</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.53">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Issue: Claude Code is unusable for complex engineering tasks with Feb updates</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">hacker_news</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.53">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Netflix Game Controller</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">NFLX</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T5 · App Store</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.52">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Rethinking Exploration in RLVR: From Entropy Regularization </div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T4 · Research</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.51">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">GOV.UK One Login</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T5 · App Store</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.51">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">ChatGPT</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T5 · App Store</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.49">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">NKE</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">NKE</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · Earnings</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.46">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Show HN: Ghost Pepper – Local hold-to-talk speech-to-text for macOS</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">hacker_news</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.44">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Show HN: GovAuctions lets you browse government auctions at once</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">hacker_news</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.39">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">ADOBE INC (ADBE)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">ADBE</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · 13F</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.38">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">COIN</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">COIN</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T2 · Short Int</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.37">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Philips Respironics, Inc.</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T5 · FDA</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.37">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Fairy / Amazon Overall (UK)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">AMZN</span> <span style="color:var(--text4);">&middot;</span> <span class="ticker-cell">PG</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T5 · Amazon</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.36">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">InterDigital, Inc. (IDCC)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">IDCC</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T1 · Insider</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.35">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Genentech</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            
+            <span class="sector-tag"></span>
+            <span class="badge blue">T4 · GitHub</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+      <div class="signal-card ambiguous" data-sector="" data-dir="ambiguous" data-score="0.35">
+        <div class="signal-hdr" onclick="toggleCard(this)">
+          
+          <span class="dir-amb">&harr;</span>
+          <div class="signal-title">Fairy / Amazon Overall (UK)</div>
+          <div class="score-dots"><span class="dot on"></span><span class="dot on"></span><span class="dot off"></span><span class="dot off"></span><span class="dot off"></span></div>
+          <span class="signal-expand">&#9654;</span>
+        </div>
+        <div class="signal-body">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <span class="ticker-cell">AMZN</span> <span style="color:var(--text4);">&middot;</span> <span class="ticker-cell">PG</span>
+            <span class="sector-tag"></span>
+            <span class="badge blue">T5 · Amazon</span>
+          </div>
+          
+          <div class="analysis-text">
+            <p></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIGNALS TABLE -->
+    <div class="section" id="signals">
+      <div class="sec-hdr">
+        <div class="sec-title">All Signals</div>
+        <div class="sec-hdr-line"></div>
+        <div class="sec-meta">34 signals &middot; 07 Apr 2026</div>
+      </div>
+      <div class="search-bar">
+        <input type="text" class="search-input" placeholder="Search by ticker, keyword, or sector..." id="signalSearch" onkeyup="searchSignals(this.value)">
+      </div>
+      <div class="filter-bar">
+        <div class="filter-btn active-f" onclick="filterDir('all',this)">All</div>
+        <div class="filter-btn" onclick="filterDir('bullish',this)">Bullish</div>
+        <div class="filter-btn" onclick="filterDir('bearish',this)">Bearish</div>
+        <div class="filter-btn" onclick="filterDir('ambiguous',this)">Ambiguous</div>
+      </div>
+      
+      <table class="data-table">
+        <thead><tr>
+          <th style="width:30px;">#</th>
+          <th>Signal</th>
+          <th>Ticker</th>
+          <th>Sector</th>
+          <th style="text-align:center;">Dir</th>
+          <th style="text-align:center;">Score</th>
+          <th>Source</th>
+          <th>Momentum</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--text4);">01</td>
+            <td style="color:var(--text0);font-weight:500;">Why safety regulators closed their investigation into Tesla’</td>
+            <td class="ticker-cell">TSLA</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.95</span></td>
+            <td style="color:var(--text3);">T2 · News</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">02</td>
+            <td style="color:var(--text0);font-weight:500;">$AMZN Reddit Breakout</td>
+            <td class="ticker-cell">COST, RDDT</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.95</span></td>
+            <td style="color:var(--text3);">T3 · Reddit</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">03</td>
+            <td style="color:var(--text0);font-weight:500;">$TSLA Reddit Breakout</td>
+            <td class="ticker-cell">JPM, RDDT, TSLA</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.95</span></td>
+            <td style="color:var(--text3);">T3 · Reddit</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">04</td>
+            <td style="color:var(--text0);font-weight:500;">$MSFT Reddit Breakout</td>
+            <td class="ticker-cell">RDDT</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.95</span></td>
+            <td style="color:var(--text3);">T3 · Reddit</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">05</td>
+            <td style="color:var(--text0);font-weight:500;">what's going on with private credit? why do people keep talk</td>
+            <td class="ticker-cell">JPM</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.95</span></td>
+            <td style="color:var(--text3);">T3 · Reddit</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">06</td>
+            <td style="color:var(--text0);font-weight:500;">$COST Reddit Breakout</td>
+            <td class="ticker-cell">COST, MDLZ, RDDT</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.95</span></td>
+            <td style="color:var(--text3);">T3 · Reddit</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">07</td>
+            <td style="color:var(--text0);font-weight:500;">Microsoft: Anthropic's $30 Billion ARR Says A Lot (Rating Do</td>
+            <td class="ticker-cell">MSFT</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.95</span></td>
+            <td style="color:var(--text3);">financial_sentiment</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">08</td>
+            <td style="color:var(--text0);font-weight:500;">JPMorgan Chase (JPM)</td>
+            <td class="ticker-cell">JPM</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.84</span></td>
+            <td style="color:var(--text3);">glassdoor_sentiment</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">09</td>
+            <td style="color:var(--text0);font-weight:500;">Wells Fargo (WFC)</td>
+            <td class="ticker-cell">WFC</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.84</span></td>
+            <td style="color:var(--text3);">glassdoor_sentiment</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">10</td>
+            <td style="color:var(--text0);font-weight:500;">Robotaxi companies won’t say how often remote operators inte</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.83</span></td>
+            <td style="color:var(--text3);">T2 · News</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">11</td>
+            <td style="color:var(--text0);font-weight:500;">Iran threatens ‘Stargate’ AI data centers</td>
+            <td class="ticker-cell">TGT</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.78</span></td>
+            <td style="color:var(--text3);">T2 · News</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">12</td>
+            <td style="color:var(--text0);font-weight:500;">Block, Inc.</td>
+            <td class="ticker-cell">XYZ</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.67</span></td>
+            <td style="color:var(--text3);">cfpb_complaints</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">13</td>
+            <td style="color:var(--text0);font-weight:500;">HD</td>
+            <td class="ticker-cell">HD</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.64</span></td>
+            <td style="color:var(--text3);">T1 · Congress</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">14</td>
+            <td style="color:var(--text0);font-weight:500;">Official Life in the UK Test</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.63</span></td>
+            <td style="color:var(--text3);">T5 · App Store</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">15</td>
+            <td style="color:var(--text0);font-weight:500;">This Big Bank Stock Trades at a Discount to Book Value -- Is</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.63</span></td>
+            <td style="color:var(--text3);">financial_sentiment</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">16</td>
+            <td style="color:var(--text0);font-weight:500;">ADBE</td>
+            <td class="ticker-cell">ADBE</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.62</span></td>
+            <td style="color:var(--text3);">T1 · Congress</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">17</td>
+            <td style="color:var(--text0);font-weight:500;">Weight Loss With GLP-1 Agonists in Nondiabetic Adults: Syste</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.57</span></td>
+            <td style="color:var(--text3);">T4 · Research</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">18</td>
+            <td style="color:var(--text0);font-weight:500;">Huize Holding Ltd (HUIZ)</td>
+            <td class="ticker-cell">HUIZ</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.55</span></td>
+            <td style="color:var(--text3);">T1 · Insider</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">19</td>
+            <td style="color:var(--text0);font-weight:500;">Hers</td>
+            <td class="ticker-cell">HIMS</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.54</span></td>
+            <td style="color:var(--text3);">T4 · Research</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">20</td>
+            <td style="color:var(--text0);font-weight:500;">Issue: Claude Code is unusable for complex engineering tasks</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.53</span></td>
+            <td style="color:var(--text3);">hacker_news</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">21</td>
+            <td style="color:var(--text0);font-weight:500;">Netflix Game Controller</td>
+            <td class="ticker-cell">NFLX</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.53</span></td>
+            <td style="color:var(--text3);">T5 · App Store</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">22</td>
+            <td style="color:var(--text0);font-weight:500;">Rethinking Exploration in RLVR: From Entropy Regularization </td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.52</span></td>
+            <td style="color:var(--text3);">T4 · Research</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">23</td>
+            <td style="color:var(--text0);font-weight:500;">GOV.UK One Login</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.51</span></td>
+            <td style="color:var(--text3);">T5 · App Store</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">24</td>
+            <td style="color:var(--text0);font-weight:500;">ChatGPT</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.51</span></td>
+            <td style="color:var(--text3);">T5 · App Store</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">25</td>
+            <td style="color:var(--text0);font-weight:500;">NKE</td>
+            <td class="ticker-cell">NKE</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.49</span></td>
+            <td style="color:var(--text3);">T2 · Earnings</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">26</td>
+            <td style="color:var(--text0);font-weight:500;">Show HN: Ghost Pepper – Local hold-to-talk speech-to-text fo</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.46</span></td>
+            <td style="color:var(--text3);">hacker_news</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">27</td>
+            <td style="color:var(--text0);font-weight:500;">Show HN: GovAuctions lets you browse government auctions at </td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.44</span></td>
+            <td style="color:var(--text3);">hacker_news</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">28</td>
+            <td style="color:var(--text0);font-weight:500;">ADOBE INC (ADBE)</td>
+            <td class="ticker-cell">ADBE</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.39</span></td>
+            <td style="color:var(--text3);">T1 · 13F</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">29</td>
+            <td style="color:var(--text0);font-weight:500;">COIN</td>
+            <td class="ticker-cell">COIN</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.38</span></td>
+            <td style="color:var(--text3);">T2 · Short Int</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">30</td>
+            <td style="color:var(--text0);font-weight:500;">Philips Respironics, Inc.</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.37</span></td>
+            <td style="color:var(--text3);">T5 · FDA</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">31</td>
+            <td style="color:var(--text0);font-weight:500;">Fairy / Amazon Overall (UK)</td>
+            <td class="ticker-cell">AMZN, PG</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.37</span></td>
+            <td style="color:var(--text3);">T5 · Amazon</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">32</td>
+            <td style="color:var(--text0);font-weight:500;">InterDigital, Inc. (IDCC)</td>
+            <td class="ticker-cell">IDCC</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.36</span></td>
+            <td style="color:var(--text3);">T1 · Insider</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">33</td>
+            <td style="color:var(--text0);font-weight:500;">Genentech</td>
+            <td class="ticker-cell"></td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.35</span></td>
+            <td style="color:var(--text3);">T4 · GitHub</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--text4);">34</td>
+            <td style="color:var(--text0);font-weight:500;">Fairy / Amazon Overall (UK)</td>
+            <td class="ticker-cell">AMZN, PG</td>
+            <td><span class="sector-tag"></span></td>
+            <td style="text-align:center;"><span class="dir-amb">&harr;</span></td>
+            <td style="text-align:center;"><span class="conf-val">0.35</span></td>
+            <td style="color:var(--text3);">T5 · Amazon</td>
+            <td><span style="color:var(--text3);font-family:var(--font-mono);font-size:10px;">STEADY</span></td>
+          </tr></tbody>
+      </table>
+    </div>
+
+    <!-- SECTOR MAP -->
+    <div class="section" id="sectors">
+      <div class="sec-hdr">
+        <div class="sec-title">Sector Heatmap</div>
+        <div class="sec-hdr-line"></div>
+        <div class="sec-meta">Signal density by sector</div>
+      </div>
+      <div class="heatmap">
+        <div class="heat-cell hot">
+          <div class="heat-label">Other</div>
+          <div class="heat-count">34</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Pharma</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Consumer</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Tech</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Energy</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Finance</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Retail</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Industrials</div>
+          <div class="heat-count">0</div>
+        </div>
+        <div class="heat-cell cold">
+          <div class="heat-label">Real Estate</div>
+          <div class="heat-count">0</div>
+        </div></div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="section" id="timeline">
+      <div class="sec-hdr">
+        <div class="sec-title">Signal Timeline</div>
+        <div class="sec-hdr-line"></div>
+        <div class="sec-meta">Detection chronology</div>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Why safety regulators closed their investigation into Tesla’</div>
+            <div class="timeline-desc">T2 · News — The NHTSA closed its investigation into Tesla's &quot;Actually Smart Summon&quot; feature, saying that only a </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">$AMZN Reddit Breakout</div>
+            <div class="timeline-desc">T3 · Reddit — REDDIT BREAKOUT: $AMZN trending across 5 posts in 4 subreddits (Costco, devops, medicine, wallstreet</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">$TSLA Reddit Breakout</div>
+            <div class="timeline-desc">T3 · Reddit — REDDIT BREAKOUT: $TSLA trending across 3 posts in 3 subreddits (electricvehicles, stocks, wallstreet</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">$MSFT Reddit Breakout</div>
+            <div class="timeline-desc">T3 · Reddit — REDDIT BREAKOUT: $MSFT trending across 3 posts in 3 subreddits (investing, medicine, stocks). Total </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">what's going on with private credit? why do people keep talk</div>
+            <div class="timeline-desc">T3 · Reddit — r/stocks [Stocks]: &quot;what's going on with private credit? why do people keep talking about it&quot; — 199 </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">$COST Reddit Breakout</div>
+            <div class="timeline-desc">T3 · Reddit — REDDIT BREAKOUT: $COST trending across 8 posts in 1 subreddits (Costco). Total traction: 4,922 upvot</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Microsoft: Anthropic's $30 Billion ARR Says A Lot (Rating Do</div>
+            <div class="timeline-desc">financial_sentiment — </div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">JPMorgan Chase (JPM)</div>
+            <div class="timeline-desc">glassdoor_sentiment — Trustpilot sentiment for JPMorgan Chase (JPM): negative sentiment detected. Rating: 1.3/5. Rating ch</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Wells Fargo (WFC)</div>
+            <div class="timeline-desc">glassdoor_sentiment — Trustpilot sentiment for Wells Fargo (WFC): negative sentiment detected. Rating: 1.1/5. Rating chang</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Robotaxi companies won’t say how often remote operators inte</div>
+            <div class="timeline-desc">T2 · News — Autonomous vehicle companies are refusing to disclose key details about their use of remote assistan</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Iran threatens ‘Stargate’ AI data centers</div>
+            <div class="timeline-desc">T2 · News — Iran said it will target U.S.-linked data centers with new missile strikes, as the war between the U</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Block, Inc.</div>
+            <div class="timeline-desc">cfpb_complaints — Block, Inc. (SQ) received 524 consumer complaints in the last 14 days. Top products: Money transfer,</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">HD</div>
+            <div class="timeline-desc">T1 · Congress — CONGRESSIONAL CLUSTER BUY: 2 members purchased HD within the disclosure window. Members: David Taylo</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Official Life in the UK Test</div>
+            <div class="timeline-desc">T5 · App Store — App ranked #3 in Top Paid Apps (UK) — developer: TSO (The Stationery Office)</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">This Big Bank Stock Trades at a Discount to Book Value -- Is</div>
+            <div class="timeline-desc">financial_sentiment — Newly released bank regulations make this bank a buy.</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">ADBE</div>
+            <div class="timeline-desc">T1 · Congress — CONGRESSIONAL CLUSTER BUY: 2 members purchased ADBE within the disclosure window. Members: Chuck Fle</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Weight Loss With GLP-1 Agonists in Nondiabetic Adults: Syste</div>
+            <div class="timeline-desc">T4 · Research — [PMID 41936548] Clinical trial paper: Two glucagon-like peptide-1 receptor agonists (GLP-1 RAs) (sem</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Huize Holding Ltd (HUIZ)</div>
+            <div class="timeline-desc">T1 · Insider — Ma Cunjun (Chief Executive Officer) purchased 7,842,032 shares @ $0.01 — total $113,976. Discretiona</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Hers</div>
+            <div class="timeline-desc">T4 · Research — [PMID 41934124] Clinical trial paper: Thrombotic thrombocytopenic purpura (TTP) is a rare and potent</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Issue: Claude Code is unusable for complex engineering tasks</div>
+            <div class="timeline-desc">hacker_news — Hacker News: &quot;Issue: Claude Code is unusable for complex engineering tasks with Feb updates&quot; — 1,178</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Netflix Game Controller</div>
+            <div class="timeline-desc">T5 · App Store — App ranked #4 in Top Free Apps (US) — developer: Netflix, Inc.</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Rethinking Exploration in RLVR: From Entropy Regularization </div>
+            <div class="timeline-desc">T4 · Research — Hengrui Gu et al. — Reinforcement learning with verifiable rewards (RLVR) has significantly advanced</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">GOV.UK One Login</div>
+            <div class="timeline-desc">T5 · App Store — App ranked #2 in Top Free Apps (UK) — developer: Government Digital Service</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">ChatGPT</div>
+            <div class="timeline-desc">T5 · App Store — App ranked #3 in Top Free Apps (UK) — developer: OpenAI OpCo, LLC</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">NKE</div>
+            <div class="timeline-desc">T2 · Earnings — NKE reported on Mar 31. EPS $0.35 vs est $0.29 (+20.4%). Revenue $11.28B vs est $11.23B (+0.5%)</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Show HN: Ghost Pepper – Local hold-to-talk speech-to-text fo</div>
+            <div class="timeline-desc">hacker_news — Hacker News: &quot;Show HN: Ghost Pepper – Local hold-to-talk speech-to-text for macOS&quot; — 411 points, 185</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Show HN: GovAuctions lets you browse government auctions at </div>
+            <div class="timeline-desc">hacker_news — Hacker News: &quot;Show HN: GovAuctions lets you browse government auctions at once&quot; — 293 points, 82 com</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">ADOBE INC (ADBE)</div>
+            <div class="timeline-desc">T1 · 13F — 13F INSTITUTIONAL: 1 tracked fund(s) show NEW position in ADOBE INC (ADBE). Funds: Bridgewater Assoc</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">COIN</div>
+            <div class="timeline-desc">T2 · Short Int — SHORT INTEREST: SQUEEZE CANDIDATE on COIN. SI decreased 14.8% period-over-period (26,559,407 → 22,64</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Philips Respironics, Inc.</div>
+            <div class="timeline-desc">T5 · FDA — Philips Respironics Trilogy Evo Universal, Software Version 1.05.15.00. Continuous home-use ventilat</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Fairy / Amazon Overall (UK)</div>
+            <div class="timeline-desc">T5 · Amazon — Amazon Movers &amp; Shakers [Overall (UK)]: AUXHCYL Solar Fairy Lights Outdoor Garden, 2Pack 240 LED 24M</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">InterDigital, Inc. (IDCC)</div>
+            <div class="timeline-desc">T1 · Insider — Pankaj Rajesh (Chief Technology Officer) sold 1,500 shares @ $313.30 — total $469,950. Transaction m</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Genentech</div>
+            <div class="timeline-desc">T4 · GitHub — Made public: compbiobench-runner</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-time">--:--</div>
+          <div class="timeline-dot" style="background:var(--canary);"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Fairy / Amazon Overall (UK)</div>
+            <div class="timeline-desc">T5 · Amazon — Amazon Movers &amp; Shakers [Overall (UK)]: cshare Solar Lights Outdoor Garden, 1Pack 5M 50 LED Solar Fa</div>
+          </div>
+        </div></div>
+    </div>
+
+    <!-- PERFORMANCE -->
+    <div class="section" id="performance">
+      <div class="sec-hdr">
+        <div class="sec-title">Performance History</div>
+        <div class="sec-hdr-line"></div>
+        <div class="sec-meta">Signal accuracy tracking</div>
+      </div>
+      
+    </div>
+
+    <div class="section" id="analysis"><div class="sec-hdr"><div class="sec-title">Cluster Analysis</div><div class="sec-hdr-line"></div><div class="sec-meta">Full Claude analysis</div></div><p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">CANARY BRIEF</p>
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;">A US-Iran war is escalating to the point where Tehran is now threatening to missile-strike American AI data centres — and Reddit's first instinct is to debate whether Costco's Oreos taste different. The market is simultaneously processing geopolitical infrastructure risk, a congressional buy cluster in a housing bellwether that screams &quot;policy trade incoming,&quot; and JPMorgan's own CEO warning that private credit losses will be &quot;larger than expected&quot; while his bank sits on a 1.3/5 Trustpilot rating from 2,510 reviews calling it a scam. Conviction ceiling is lower today — no options flow confirmed these theses, and the two insider signals are a CEO buying penny stock at $0.01 per share and a mismatched PubMed paper. Three trades with real structure. Two structural theses forming. Read time: 5 minutes.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">CLUSTER ANALYSIS</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><strong style="color:#e8e2d6;">CLUSTER 1: Iran vs. Stargate — The Infrastructure Risk Nobody Has Priced for Duration</strong></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signals:</strong> rss_news (Tier 2) — Iran threatening US-linked AI data centres with missile strikes; Reddit Tier 3 AMZN breakout on data centre cancellation/delay narrative</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The story:</strong> Iran has explicitly threatened to target &quot;Stargate&quot; AI data infrastructure with new missile strikes as the US-Iran war escalates. This is not an abstraction — it is a named threat against named infrastructure. Simultaneously, a Reddit breakout on AMZN carries this signal: nearly half of planned US data centres have been delayed or cancelled. Two signals, one thesis: the hyperscale AI infrastructure buildout is hitting a wall made of geopolitics and capital allocation doubt simultaneously. The market has been pricing AI infrastructure as a decade-long secular growth story. It has not fully priced a scenario where that infrastructure becomes a military target. The second-order risk is subtler: insurance costs, redundancy capex, geographic diversification requirements, and the chilling effect on sovereign wealth and foreign capital co-investing in US AI infrastructure (the Stargate consortium includes SoftBank — a Japanese entity now watching Tehran threaten the assets it's backing).</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The trade:</strong> The primary exposed names are not the hyperscalers themselves — those are already being discussed. The real gap is in the companies that <em style="color:#c8a84e;">sell</em> the physical resilience layer: Equinix (<strong style="color:#e8e2d6;">EQIX</strong>) and Digital Realty (<strong style="color:#e8e2d6;">DLR</strong>) are the boring infrastructure plumbing that suddenly becomes strategic when nation-states start targeting data centres. Geographic diversification of compute becomes a tailwind for non-US colocation operators. The short side is the concentrated US-based hyperscale capex story: the AMZN data centre delay narrative, if it has legs, hits the capex-heavy hyperscalers on both the cost side (stranded investment) and the revenue side (delayed AI service rollout). Note: ticker &quot;TGT&quot; assigned by the pipeline to the Iran story is a mislabelling — Target Corp has nothing to do with this. The relevant instruments are <strong style="color:#e8e2d6;">MSFT</strong>, <strong style="color:#e8e2d6;">AMZN</strong>, <strong style="color:#e8e2d6;">GOOGL</strong> (hyperscalers at risk), <strong style="color:#e8e2d6;">EQIX</strong>, <strong style="color:#e8e2d6;">DLR</strong> (beneficiaries of geographic redundancy demand), and <strong style="color:#e8e2d6;">ITA</strong> (defence — war escalation tail).</p>
+<div style="height:8px;"></div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #2a2a2a;margin:10px 0 16px 0;"><tr style="background-color:#222222;"><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Ticker</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Company</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Direction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Why</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">EQIX</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Equinix</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Geographic redundancy demand accelerates as AI infra becomes a military target</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">DLR</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Digital Realty</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Same thesis; non-US colocation assets gain strategic premium</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">AMZN</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Amazon AWS</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↓</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Half of planned US data centres delayed/cancelled; concentrated US infrastructure exposure</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MSFT</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Microsoft</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↓</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Stargate co-investor; Azure concentration in US geography</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">ITA</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">iShares US Aerospace &amp; Defence ETF</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">War escalation; second-order defence spend read-through</td></tr></table>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Early or late?</strong> The Iran headline is priced as a single-day geopolitical spike. The <em style="color:#c8a84e;">duration thesis</em> — that AI infrastructure buildout costs more, takes longer, and requires geographic redundancy in a persistent conflict environment — is early. The AMZN data centre delay data is being discussed on Reddit, not in sell-side notes yet.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Risk/Reward:</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Upside case:</em> Conflict persists through Q2; hyperscale capex guidance cuts materialise in Q1 earnings (late April); EQIX/DLR re-rate as the &quot;safe geography&quot; premium gets priced. EQIX has historically traded at 22-25x EBITDA; a re-rating catalyst from geopolitical demand could add 8-12% over weeks.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Downside case:</em> Ceasefire or de-escalation removes the thesis. Data centre delays prove temporary. EQIX/DLR flat to down in a risk-off environment.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Key risk:</em> Correlation — in a genuine risk-off geopolitical event, EVERYTHING goes down initially, including EQIX/DLR. The re-rating thesis requires survival through the initial selloff.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Stop-loss catalyst:</em> US-Iran ceasefire announcement, or hyperscalers reaffirm data centre capex guidance unchanged on Q1 calls. Position size: 1-1.5% tactical, core expressed through EQIX as the cleanest instrument.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">What to monitor:</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> Watch for any Stargate consortium (SoftBank, OpenAI, Oracle) communication about insurance, redundancy, or geographic diversification within the next 72 hours — this is the first confirmation that institutional capital is treating this as a duration event, not a headline.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> Watch AMZN Q1 earnings (late April) for data centre capex guidance — if Jassy trims or qualifies the buildout timeline, the bearish hyperscale thesis is confirmed.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> Watch ITA for continuation above its 50-day moving average — if defence ETF holds the move into next week, the war escalation is being priced as structural, not episodic.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Time horizon:</strong> WEEKS (Iran conflict duration; hyperscale earnings in ~3 weeks)</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Conviction:</strong> MEDIUM — the geopolitical signal is real; the infrastructure duration thesis is early and coherent; but the absence of options flow or insider confirmation keeps this below high conviction. The AMZN data centre delay correlation is the most interesting strand.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><strong style="color:#e8e2d6;">CLUSTER 2: The Bipartisan Home Depot Buy — A Policy Trade in Plain Sight</strong></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signals:</strong> congressional_trading (Tier 1) — CLUSTER BUY in HD; David Taylor (R-OH) and Ro Khanna (D-CA) both purchased HD within the disclosure window; trade dates 24 Feb to 12 Mar 2026.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The story:</strong> This is the cluster pattern that earns its Tier 1 treatment not because two people bought a home improvement stock, but because of <em style="color:#c8a84e;">who</em> and <em style="color:#c8a84e;">why</em>. David Taylor (Republican, Ohio) and Ro Khanna (Democrat, California) are not natural bedfellows. Ohio is manufacturing and housing. California is tech and housing policy. When a Republican and a Democrat independently buy the same domestic consumer durables name within three weeks of each other, the most compelling explanation isn't &quot;they both like the chart.&quot; It's that something is coming in housing or domestic construction policy that neither party's base will object to — infrastructure spending, housing finance reform, tariff carve-outs for domestic building materials, or a rate cut thesis getting confirmed in private briefings. <strong style="color:#e8e2d6;">Staleness check:</strong> The trades span 24 Feb to 12 Mar 2026 — that's 26-43 days ago. The market may have partially moved. HD is currently ~$325B market cap. Check the current price against HD's price on 24 Feb before sizing. If HD is flat to down since late February, the information edge is alive. If it's up &gt;8%, you're the last to know.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The trade:</strong> Long <strong style="color:#e8e2d6;">HD</strong> — the bipartisan nature of this cluster is the key discriminator from routine index-mirroring. Khanna buys a lot of things; Taylor is more selective. The housing and domestic construction read-through is the most coherent policy thesis. Home Depot earns the majority of its revenue from professional contractors and housing renovation — the segment most directly exposed to any housing policy tailwind, tariff protection for domestic lumber/materials, or rate normalisation stimulus.</p>
+<div style="height:8px;"></div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #2a2a2a;margin:10px 0 16px 0;"><tr style="background-color:#222222;"><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Ticker</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Company</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Direction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Why</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">HD</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Home Depot</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Bipartisan congressional cluster buy; housing/domestic construction policy read-through</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">LOW</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Lowe's</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Same sector; if the HD thesis is policy-driven, LOW participates</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">ITB</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">iShares US Home Construction ETF</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Broad expression of housing policy tailwind</td></tr></table>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Early or late?</strong> Partially early. The trades are 26-43 days old, so the market has had some time. But the <em style="color:#c8a84e;">policy thesis</em> behind them is not in analyst notes yet. This is the gap.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Risk/Reward:</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Upside case:</em> Housing policy catalyst (rate cut, infrastructure bill, tariff carve-out for domestic materials) materialises in Q2. HD re-rates on forward earnings revision. 10-15% move over 6-8 weeks.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Downside case:</em> No policy catalyst; housing data continues to disappoint; HD misses Q1 earnings. Limited downside given HD's defensive earnings quality, but 5-7% giveback plausible.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Key risk:</em> The trades are old enough that the edge may be partially priced. Verify HD's current price before entering.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Stop-loss catalyst:</em> HD Q1 earnings miss + guidance cut. Or a housing starts print below 1.1M annualised confirming structural demand weakness. Position size: 1% tactical; verify price action before initiating.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">What to monitor:</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> HD's current price vs. its 24 Feb 2026 price — if flat or down, initiate; if up &gt;8%, pass.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> Any housing policy announcement from either the House Ways and Means Committee or relevant Senate committees within the next two weeks.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> HD Q1 earnings date — when set, the information asymmetry window narrows to that date; size accordingly.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Time horizon:</strong> WEEKS (policy catalyst or earnings in ~3-6 weeks)</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Conviction:</strong> MEDIUM — bipartisan cluster is the signal; staleness (26-43 days) and index-mirror risk (Khanna is a frequent buyer) keep this below high conviction. The asymmetry is the cross-party buy.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><strong style="color:#e8e2d6;">CLUSTER 3: Private Credit Stress — Dimon's Warning and the Fintech Friction Signal</strong></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signals:</strong> Reddit Tier 3 (private credit discussion, JPM bearish framing); Trustpilot/glassdoor Tier 4 (JPM 1.3/5, WFC 1.1/5, CFPB complaints); Block/SQ CFPB complaints (Tier 3); financial_sentiment Tier 2 (bank at discount to book).</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The story:</strong> Jamie Dimon publicly warning that private credit losses will be &quot;larger than expected&quot; is not a routine risk management comment. He is the CEO of the largest US bank and effectively the sector's most visible voice. When he says losses will be larger than expected, he is almost certainly referring to the credit quality of loans originated by alternative asset managers — Blackstone (<strong style="color:#e8e2d6;">BX</strong>), KKR (<strong style="color:#e8e2d6;">KKR</strong>), Apollo (<strong style="color:#e8e2d6;">APO</strong>), Ares (<strong style="color:#e8e2d6;">ARES</strong>) — that bypassed traditional bank underwriting standards during the 2021-2023 private credit boom. The Reddit signal captures this perfectly: retail investors are <em style="color:#c8a84e;">just now</em> asking &quot;what is private credit?&quot; — which is exactly the moment before this becomes a consensus story. Simultaneously, JPM and WFC have 1.3/5 and 1.1/5 Trustpilot ratings respectively with CFPB complaint language including &quot;fraud,&quot; &quot;scam,&quot; &quot;class action.&quot; This is background noise for mega-cap banks (they've always had terrible retail review scores), but the <em style="color:#c8a84e;">combination</em> of Dimon's warning + retail confusion about private credit + CFPB complaint acceleration is a structural story about where credit stress is building. The financial_sentiment signal about a bank trading at discount to book is almost certainly <strong style="color:#e8e2d6;">TFC</strong> (Truist Financial) — the Fool article's description matches Truist's profile. Truist has been the &quot;discount to book&quot; story in regionals for two years; new bank regulations could be the positive catalyst that closes the gap.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The trade:</strong> The primary short thesis is the alternative asset managers with the largest private credit AUM exposure: <strong style="color:#e8e2d6;">BX</strong>, <strong style="color:#e8e2d6;">APO</strong>, <strong style="color:#e8e2d6;">KKR</strong>, <strong style="color:#e8e2d6;">ARES</strong>. If Dimon's &quot;larger than expected&quot; call is directional intelligence about the private credit vintage of 2021-2023, these names carry the most earnings risk from fee compression and realisation delays. The long thesis, counterintuitively, is traditional banks recapturing credit market share as private credit tightens — <strong style="color:#e8e2d6;">JPM</strong> and <strong style="color:#e8e2d6;">BAC</strong> would benefit from the return of loan volume to regulated balance sheets. <strong style="color:#e8e2d6;">TFC</strong> at discount to book is the most asymmetric single-stock expression if new bank regulations are genuinely the positive catalyst suggested.</p>
+<div style="height:8px;"></div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #2a2a2a;margin:10px 0 16px 0;"><tr style="background-color:#222222;"><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Ticker</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Company</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Direction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Why</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">APO</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Apollo Global</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↓</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Largest private credit AUM; most exposed to vintage 2021-23 credit quality risk</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">ARES</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Ares Management</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↓</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Same thesis; direct private credit earnings risk</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">BX</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Blackstone</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↓</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Realisation delays and fee income risk if private credit losses accelerate</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">JPM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">JPMorgan</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Credit market share recapture if private credit tightens</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">TFC</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Truist Financial</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">↑</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Discount to book; new bank regs as positive catalyst; most asymmetric single-stock</td></tr></table>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Early or late?</strong> The &quot;Dimon warning&quot; headline is in the price. The <em style="color:#c8a84e;">systematic</em> private credit vintage stress thesis — where losses propagate through BX/APO/ARES AUM and hit management fees — is early. Retail investors asking &quot;what is private credit?&quot; on Reddit is the tell: this is 6-9 months from being the consensus story.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Risk/Reward (TFC as primary expression):</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Upside case:</em> New bank regulations remove capital constraints; TFC closes discount to book; 15-20% re-rating possible over 2-3 months.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Downside case:</em> Regulations delayed or watered down; TFC misses on credit costs from commercial real estate. Limited downside given discount starting point.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Key risk:</em> TFC's CRE exposure is a real risk; any credit deterioration announcement would override the regulatory catalyst.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <em style="color:#c8a84e;">Stop-loss catalyst:</em> TFC reports elevated loan loss provisions or CRE impairment. Position size: 0.75% tactical on TFC; smaller tactical short on APO as the cleanest private credit earnings risk expression.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">What to monitor:</strong></p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> Watch for any BX/APO/ARES investor day language about private credit default rates or net realised income guidance in Q1 earnings (late April).</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> Watch for the specific &quot;new bank regulations&quot; referenced in the TFC article — if it's Basel III endgame relief or FDIC capital rule changes, that is a direct TFC catalyst.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> Watch Reddit/financial press for &quot;private credit default&quot; or &quot;private credit stress&quot; coverage acceleration — this is the signal the retail confusion phase is ending and institutional pricing begins.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Time horizon:</strong> MONTHS (private credit stress is structural; TFC regulatory catalyst is 1-3 months)</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Conviction:</strong> MEDIUM — Dimon's directional signal is strong; the BX/APO/ARES short thesis is coherent; but the absence of options flow or insider confirmation keeps this at medium. The TFC long is the most asymmetric expression and the least crowded trade in this cluster.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><strong style="color:#e8e2d6;">CLUSTER 4: ADBE Congressional Cluster — The Index-Mirror Problem</strong></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Signals:</strong> congressional_trading (Tier 1) — CLUSTER BUY in ADBE; Chuck Fleischmann (R-TN) and Ro Khanna (D-CA) both purchased ADBE between 20-24 Feb 2026. Note: index_mirror_penalty_applied (Ro Khanna appears buying multiple mega-cap tech tickers simultaneously).</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The story:</strong> This cluster has the right shape but is compromised by the index-mirror problem. Ro Khanna — the Democrat from Silicon Valley — appears in both the ADBE and HD clusters, and has been flagged for buying multiple mega-cap tech tickers simultaneously. This is the pattern of portfolio rebalancing toward the Nasdaq, not informed sector-specific trading. The ADBE-specific question is whether Fleischmann adds conviction independently. He sits on the House Appropriations Committee (Energy and Water, Homeland Security subcommittees) — not an obvious ADBE read-through. Trades are 42-45 days old. ADBE is currently down ~20% YTD driven by competitive concerns from AI-native design tools (Figma, Canva, Midjourney). The question is whether two members buying a stock that's already been beaten down on a known thesis is a contrarian signal or routine allocation.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">The trade:</strong> This is a conditional setup. If ADBE is flat to modestly down since 20-24 Feb, there may be a contrarian mean-reversion case: the competitive AI design tool threat is known and priced, ADBE's Creative Cloud monetisation is underestimated, and the congressional buy adds marginal directional signal. But with the index-mirror flag and 42-45 day staleness, this does not clear the bar for an actionable Edge Signal today.</p>
+<div style="height:8px;"></div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #2a2a2a;margin:10px 0 16px 0;"><tr style="background-color:#222222;"><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Ticker</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Company</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Direction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Why</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">ADBE</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Adobe</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MONITOR</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Bipartisan cluster buy but index-mirror flag and 42-45 day staleness; verify price action</td></tr></table>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Early or late?</strong> Likely late — the trades are 42-45 days old and ADBE's competitive AI design tool problem is consensus. The buy may be a falling-knife allocation, not informed trading.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">What to monitor:</strong> ADBE's next earnings date — if set within 3-4 weeks, that's the window where any information edge from the congressional buys either materialises or expires.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Time horizon:</strong> WEEKS (if earnings catalyst confirms)</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Conviction:</strong> LOW — index-mirror flag, staleness, and no independent confirmation. Demoting to Chirps territory; noted for completeness.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><strong style="color:#e8e2d6;">LOW SIGNAL DISPOSITIONS:</strong></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">HUIZ (Signal 18):</strong> CEO bought 7.8M shares at $0.01/share for $113K total. The price per share is $0.01. This is a microcap Chinese insurance holding company with a $15M market cap. At $0.01/share, this looks like a par-value or restructuring transaction, not a genuine discretionary open-market purchase expressing confidence. The signal mechanics are technically correct but the economic substance is minimal. Note and dismiss.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">TSLA NHTSA closure (Signal 1):</strong> NHTSA closing the Actually Smart Summon investigation is a modest regulatory positive. It is already in the price within hours of publication (TechCrunch ran it yesterday). JPMorgan simultaneously warning of a 60% crash and BYD overtaking Tesla in EV sales is a more material narrative. No incremental edge here.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">TSLA robotaxi disclosure (Signal 10):</strong> Sen. Markey asking for remote intervention disclosure rates is a regulatory risk that is real but slow-moving. No specific financial catalyst within the time horizons that matter. File under structural regulatory pressure on <strong style="color:#e8e2d6;">WAYMO</strong> (private), <strong style="color:#e8e2d6;">TSLA</strong>, and the autonomous vehicle sector broadly.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">GLP-1 PubMed paper (Signal 17):</strong> Systematic review comparing semaglutide/liraglutide/tirzepatide efficacy. This is a meta-analysis of existing data, not new trial results. No material incremental information for NVO or LLY positioning. The GLP-1 thesis is thoroughly consensus.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">HIMS PubMed paper (Signal 19):</strong> Paper is about TTP treatment with rADAMTS13. Ticker mislabelled — &quot;Hers&quot; in the entity field refers to a women's health keyword in HIMS's marketing, not a direct connection to thrombotic thrombocytopenic purpura research. No actionable ticker connection. Dismiss.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">COST Reddit (Signal 6):</strong> The Costco subreddit is discussing the April savings book, Oreo taste, and a locker update. This is community content, not a commercial signal. The consumer convergence boost (glassdoor + reddit) is technically triggered but the underlying substance is absent. Costco's moat is intact; the Oreo situation remains under investigation.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Claude Code HN thread (Signal 20):</strong> Genuine developer frustration with Anthropic's February updates degrading Claude Code for complex tasks. This is a competitive signal for <strong style="color:#e8e2d6;">MSFT</strong> (Copilot differentiation) and <strong style="color:#e8e2d6;">GOOGL</strong> (Gemini Code Assist) if it's sustained, but a single HN thread is not sufficient. Watch for pattern continuation over the next 2-4 weeks.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">&quot;Life in the UK Test&quot; App (Signal 14):</strong> App ranked #3 in UK paid apps. TSO is not publicly listed. The sector map misattributes this to EV and AI sectors — this is a citizenship test prep app likely benefiting from immigration application volumes. Interesting as a macro UK migration signal; zero investable ticker exposure in this pipeline.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">MSFT Anthropic/rating downgrade (Signal 7):</strong> The thesis that Anthropic's $30B ARR implies competitive threat to Microsoft's OpenAI partnership is real but thoroughly covered. Seeking Alpha downgrade is not primary analytical edge. The MSFT directional conflict flag is accurate — there are bulls and bears here; the bears have a real point about OpenAI's valuation implying Microsoft overpaid for exclusivity.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">JPM/WFC Trustpilot scores (Signals 8-9):</strong> 1.3/5 and 1.1/5 Trustpilot scores for two mega-cap banks are longstanding noise. Large retail banks universally have abysmal consumer review scores. The CFPB complaint acceleration adds marginal colour to the private credit stress cluster but does not independently move the needle on either stock. Incorporated into Cluster 3.</p>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Block/SQ CFPB complaints (Signal 12):</strong> 524 complaints in 14 days is elevated but the steady-state flag (7 days without acceleration) suggests this is existing noise, not a new deterioration. <strong style="color:#e8e2d6;">SQ</strong> (now <strong style="color:#e8e2d6;">XYZ</strong> in rebranding) carries ongoing regulatory friction risk but this signal has been present for weeks. The ticker is listed as XYZ but the entity is Block/SQ — note the ticker.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">SUMMARY SCORECARD</p>
+<div style="height:8px;"></div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #2a2a2a;margin:10px 0 16px 0;"><tr style="background-color:#222222;"><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Cluster</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Ticker</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Direction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Conviction</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Horizon</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Entry</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Stop</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Target</td><td style="padding:8px 12px;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:9px;color:#5a564e;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;">Thesis</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Iran/AI Infrastructure</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">EQIX</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MEDIUM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Weeks</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Buy up to $860</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Below $800 on risk-off selloff</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">$940 (+10%)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">AI infra geographic redundancy demand accelerates; duration of conflict not priced in colocation premium</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Iran/AI Infrastructure</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">AMZN</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Short/Cautious</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MEDIUM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Weeks</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Fade any post-earnings guidance reaffirmation</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Cover if Q1 data centre capex reaffirmed</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">5-8% downside on guidance cut</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Half of US data centres delayed; concentrated US geography in a hot conflict environment</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Iran/AI Infrastructure</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">ITA</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MEDIUM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Weeks</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Buy on any pullback below $135</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Below $125 (war de-escalation)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">$150 (+10%)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">US-Iran war escalation; defence spend duration thesis unpriced by market</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Congressional HD Buy</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">HD</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MEDIUM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Weeks</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Buy if HD flat-to-down vs 24 Feb price; pass if up &gt;8%</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Below $340 close, or Q1 earnings miss</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">$420 (+10-15%)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Bipartisan cluster buy signals domestic housing/construction policy catalyst incoming</td></tr><tr style=""><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Private Credit Stress</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">TFC</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Long</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MEDIUM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Months</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Buy up to $38</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Below $33 (CRE impairment)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">$46 (+20%)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Discount to book; new bank reg catalyst; least crowded trade in private credit stress thesis</td></tr><tr style="background-color:#1e1e1e;"><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Private Credit Stress</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">APO</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Short</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">MEDIUM</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Months</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Short below $120</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Above $130 (new fundraise success)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">$100 (-17%)</td><td style="padding:8px 12px;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#b0a898;border-bottom:1px solid #2a2a2a;">Vintage 2021-23 private credit losses; Dimon warning is directional intelligence</td></tr></table>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">SOCIAL ARBITRAGE CLUSTER</p>
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><strong style="color:#e8e2d6;">Cluster thesis: Consumer signals are fragmenting under the weight of macro anxiety — AI infrastructure doubt, housing cost pressure, and financial system distrust are surfacing simultaneously across Reddit, CFPB, and Trustpilot, forming an early picture of a consumer and small-investor class that is starting to question the systems they've been told to trust.</strong></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">AI INFRASTRUCTURE DOUBT</strong> — 2 converging signals</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;">Reddit's AMZN breakout (10,248 upvotes across 5 posts, including WSB) leading with &quot;nearly half of planned US data centres have been delayed or cancelled&quot; — and now Iran explicitly threatening the ones that weren't cancelled. These are two independent communities arriving at the same anxiety: the AI buildout story may be more fragile than the multiples suggest. This is consumer-grade intelligence arriving before any sell-side data centre capex revision note.</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><em style="color:#c8a84e;">Tickers: AMZN ↓ · EQIX ↑ · DLR ↑</em></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">FINANCIAL SYSTEM DISTRUST WAVE</strong> — 3 converging signals</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;">Reddit's private credit thread (199 upvotes, retail investors asking &quot;what even is private credit?&quot;) + JPM 1.3/5 Trustpilot with &quot;fraud/scam&quot; language + WFC 1.1/5 with &quot;class action&quot; keywords + CFPB complaint volume — this is a multi-source signal of retail financial distrust building slowly. The Reddit thread is the leading indicator: the moment Main Street starts asking about private credit is typically 6-9 months before the institutional story becomes consensus. Dimon giving the answer publicly (&quot;losses will be larger than expected&quot;) is the accelerant.</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><em style="color:#c8a84e;">Tickers: APO ↓ · ARES ↓ · JPM neutral · TFC ↑ (contrarian)</em></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">TESLA NARRATIVE EXHAUSTION</strong> — 2 signals, neutral-to-bearish</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;">TSLA Reddit breakout (6,203 upvotes) is <em style="color:#c8a84e;">about</em> JPMorgan's 60% downside call and BYD overtaking Tesla again. The community is not defending the stock with the conviction of prior cycles. EV sales hit a record in March — but BYD took the number-one spot. NHTSA closing the Summon investigation is a regulatory positive that the community is barely discussing. This is the tone shift that precedes a narrative breakdown: the bulls are quiet, the bears are citing credible sell-side coverage.</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><em style="color:#c8a84e;">Tickers: TSLA ↓ (cautious) · BYD (not US-listed) · RIVN neutral</em></p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">COSTCO AS CONSUMER BELLWETHER</strong> — 1 signal, monitoring</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;">The Costco subreddit (8 posts, 4,922 upvotes) is focused on the April savings book and product quality concerns (Oreos taste different). Taken alone, this is noise. In the context of broader consumer cost anxiety, Costco's membership model is the one consumer retail moat that tends to <em style="color:#c8a84e;">strengthen</em> during consumer stress cycles — members trade down from specialty retail to bulk Costco purchasing. Worth watching for any COST earnings signal amplification.</p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><em style="color:#c8a84e;">Tickers: COST ↑ (defensive)</em></p>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;"><em style="color:#c8a84e;">Validate: Check whether Costco's April savings book shows deeper-than-usual discounting (&gt;20% on staples) — if so, COST is responding to member price sensitivity, confirming defensive consumer rotation.</em></p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">WHAT TO WATCH</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">AMZN Q1 Earnings (Late April — ~3 weeks) — Data Centre Capex Guidance:</strong> Watch for Jassy's commentary on AWS infrastructure buildout timeline. Confirms: if data centre capex guidance is cut or qualified, the Iran/AI infrastructure short thesis is live — add AMZN short and revisit EQIX long. Fails if: capex guidance reaffirmed in full — the Reddit/Iran delay signal is noise, cover any AMZN short positioning.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">HD Price vs. 24 Feb 2026 Level — Before Market Open Today:</strong> Check HD's current price against its late-February price. Confirms: if flat to down, the congressional information edge is unpriced — initiate 1% tactical long with stop below $340. Fails if: HD is up &gt;8% since the trade dates — the edge is priced, pass entirely.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Iran-US Conflict Trajectory — Daily:</strong> Watch for any ceasefire negotiation, de-escalation signal, or US diplomatic engagement with Iran via intermediaries (Qatar, Oman). Confirms escalation: no diplomatic language within 5 trading days, ITA hold above $135 — hold defence long. Fails if: ceasefire language emerges — reverse ITA immediately and revisit EQIX geographic redundancy thesis as a slower-burn rather than war premium.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">APO/ARES/BX Q1 Earnings Calls (Late April) — Private Credit Language:</strong> Watch for any language about &quot;net realised income,&quot; &quot;portfolio markdowns,&quot; or &quot;vintage 2021-2023 performance&quot; on earnings calls. Confirms the Dimon private credit stress thesis: initiate or add to APO short. Fails if: AMs report clean credit metrics with no vintage stress — Dimon's warning was managing expectations downward for public benefit, not directional intelligence; cover short.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Claude Code Complaint Thread Continuation (HN/Reddit — 7 days):</strong> Watch for acceleration of developer frustration with Anthropic/Claude Code. Confirms: if thread spawns &gt;3 follow-up HN posts or Reddit developer community coverage within the week, this becomes a competitive signal for <strong style="color:#e8e2d6;">MSFT</strong> Copilot and <strong style="color:#e8e2d6;">GOOGL</strong> Gemini Code Assist — add to existing big-tech positions with an AI coding market share narrative. Fails if: Anthropic releases a patch update and the thread goes cold — one-off complaint, not structural.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">EDGE SIGNALS</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">[GEOPOLITICAL|MEDIUM]</strong> Iran's explicit missile threat against US AI data centres is a duration event, not a headline spike — the market is pricing a one-day geopolitical premium while the actual consequence (insurance cost escalation, geographic redundancy capex, foreign capital re-evaluation of Stargate co-investment) plays out over weeks; buy <strong style="color:#e8e2d6;">EQIX</strong> as the geographic diversification beneficiary and <strong style="color:#e8e2d6;">ITA</strong> as the war escalation vehicle, weeks horizon, with a US-Iran ceasefire as the stop.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">[MACRO|MEDIUM]</strong> Jamie Dimon warning that private credit losses will be &quot;larger than expected&quot; is a tell that the 2021-2023 vintage alternative credit boom is entering its reckoning phase — retail investors are only now Googling &quot;what is private credit,&quot; which means you have roughly 6-9 months before this is consensus; the cleanest expression is short <strong style="color:#e8e2d6;">APO</strong> (largest private credit AUM) and long <strong style="color:#e8e2d6;">TFC</strong> (discount to book, bank regs as positive catalyst), months horizon.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">[CONGRESSIONAL|MEDIUM]</strong> A bipartisan House cluster buy in <strong style="color:#e8e2d6;">HD</strong> — Republican Ohio and Democrat California — is the political fingerprint of domestic construction/housing policy on the way, not earnings momentum; if HD is flat-to-down versus its 24 February price when you check this morning, initiate a 1% tactical long; if it's up more than 8%, the edge has been priced and you pass.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">[SECTOR|LOW]</strong> The ADBE congressional cluster (Fleischmann + Khanna, 20-24 Feb) carries an index-mirror flag — Khanna was simultaneously buying multiple mega-cap tech names — reducing the signal to noise; the only interesting read is whether ADBE's beaten-down AI-competition narrative creates a mean-reversion setup into its next earnings; monitor rather than trade, weeks horizon.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">[META|MEDIUM]</strong> Pipeline blind spot today: no <code style="font-family:'SF Mono','Roboto Mono','Fira Code',monospace;color:#b09a5a;background:#1e1e1e;padding:1px 4px;">options_flow</code>, no <code style="font-family:'SF Mono','Roboto Mono','Fira Code',monospace;color:#b09a5a;background:#1e1e1e;padding:1px 4px;">uk_director_dealings</code>, and the one <code style="font-family:'SF Mono','Roboto Mono','Fira Code',monospace;color:#b09a5a;background:#1e1e1e;padding:1px 4px;">sec_insider</code> signal (HUIZ CEO buying at $0.01/share) is a par-value transaction with no genuine directional content — the absence of T1 flow in a week of active geopolitical escalation is itself informative, suggesting either genuine uncertainty at the insider level or broad blackout windows ahead of Q1 earnings season; treat all clusters above as medium conviction maximum and position accordingly.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">CANARY CHIRPS</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Private credit retail awareness curve building.</strong> Reddit's &quot;what is private credit?&quot; thread is the leading indicator of a narrative that will reach institutional consensus in 6-9 months. Watch for the first mainstream financial press feature on &quot;private credit defaults&quot; — when it runs, the BX/APO/ARES short thesis will be crowded; the window is now, before that happens.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">TSLA narrative tone shift worth watching.</strong> The Reddit TSLA cluster is notable not for what it says but what it doesn't — the usual cohort of Tesla bulls is quiet while the bears cite JPMorgan's 60% downside case. BYD reclaiming the March EV sales crown for the second consecutive period is the structural data point. Watch for whether TSLA's next earnings call (late April) produces a guidance cut — if it does, the tone shift is confirmed and the short thesis becomes crowded fast.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">Claude Code quality regression — competitive signal forming.</strong> The Hacker News thread on Claude Code's February update degrading complex engineering task performance has 1,178 points and 637 comments — developer community engagement is genuine. If Anthropic doesn't patch this within two weeks, this is a competitive opening for <strong style="color:#e8e2d6;">MSFT</strong> GitHub Copilot and <strong style="color:#e8e2d6;">GOOGL</strong> Gemini Code Assist. Not a trade yet; it becomes one if the thread persists and spawns product comparisons.</p>
+<div style="height:8px;"></div>
+<p style="margin:3px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#b0a898;line-height:1.6;padding-left:16px;"><span style="color:#c8a84e;">&middot;</span> <strong style="color:#e8e2d6;">&quot;Life in the UK Test&quot; app at #3 UK paid charts.</strong> Not investable directly (TSO is private), but this is a leading indicator of elevated UK citizenship application volumes — which has read-throughs to UK immigration policy pressure, legal services demand, and potentially housing demand in urban areas. Worth tracking as a macro UK demographic signal over the next 6-12 months if it stays elevated.</p>
+<div style="height:8px;"></div>
+<hr style="border:none;border-top:1px solid #2a2a2a;margin:14px 0;">
+<div style="height:8px;"></div>
+<p style="margin:22px 0 6px 0;font-family:'SF Mono','Roboto Mono','Fira Code',monospace;font-size:10px;font-weight:600;color:#c8a84e;letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid #2a2a2a;padding-bottom:8px;">THE CLOSE</p>
+<div style="height:8px;"></div>
+<p style="margin:2px 0;font-family:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;color:#d4cfc4;line-height:1.7;">By the time the sell-side publishes its first note on AI infrastructure geographic risk premiums and private credit vintage stress in the same week — call it mid-May — you'll have had five weeks to build both positions.</p></div>
+
+  </div>
+</div>
+
+<script>
+function updateClock(){var n=new Date();document.getElementById('clock').textContent=n.toTimeString().slice(0,8);}
+setInterval(updateClock,1000);updateClock();
+
+function show(id,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(el)el.classList.add('active');
+}
+
+function toggleCard(hdr){hdr.closest('.signal-card').classList.toggle('open');}
+
+function filterSector(s){
+  document.querySelectorAll('.signal-card').forEach(c=>{
+    if(s==='all'){c.style.display='';return;}
+    c.style.display=c.dataset.sector===s?'':'none';
+  });
+}
+
+function filterDir(d,btn){
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active-f'));
+  if(btn)btn.classList.add('active-f');
+  document.querySelectorAll('.data-table tbody tr').forEach(r=>{
+    if(d==='all'){r.style.display='';return;}
+    var dir=r.querySelector('.dir-up')?'bullish':r.querySelector('.dir-dn')?'bearish':'ambiguous';
+    r.style.display=dir===d?'':'none';
+  });
+}
+
+function searchSignals(q){
+  q=q.toLowerCase();
+  document.querySelectorAll('.data-table tbody tr').forEach(r=>{
+    r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';
+  });
+}
+
+document.addEventListener('keydown',(e)=>{
+  var sections=['overview','signals','sectors','timeline','performance'];
+  var idx=parseInt(e.key)-1;
+  if(idx>=0&&idx<sections.length){var ni=document.querySelectorAll('.nav-item');show(sections[idx],ni[idx]);}
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();show('signals',document.querySelectorAll('.nav-item')[1]);document.getElementById('signalSearch').focus();}
+});
+</script>
+</body>
+</html>
